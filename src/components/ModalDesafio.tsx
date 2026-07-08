@@ -1,0 +1,169 @@
+import { useEffect, useRef, useState } from "react";
+import type { Desafio } from "../config/desafios";
+import { cooldownRestante, formatoRestante, iniciarCooldown } from "../lib/cooldown";
+import { colorFigurita } from "./Figurita";
+
+type Props = {
+  desafio: Desafio;
+  claseId: string;
+  pegada: boolean; // la clase ya la desbloqueó (puede pasar con el modal abierto)
+  onCorrecta: (n: number) => Promise<boolean>; // true si el guardado salió bien
+  onClose: () => void;
+};
+
+type Feedback =
+  | { tipo: "ok" }
+  | { tipo: "error" }         // respuesta incorrecta
+  | { tipo: "guardando" }
+  | { tipo: "fallo-guardado" } // upsert falló (red, etc.)
+  | null;
+
+export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onClose }: Props) {
+  const [restante, setRestante] = useState(() => cooldownRestante(claseId, desafio.n));
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  const [imgRota, setImgRota] = useState(false);
+  const cerrarRef = useRef<HTMLButtonElement>(null);
+
+  const color = colorFigurita(desafio.n);
+  const num = String(desafio.n).padStart(2, "0");
+  const enCooldown = restante > 0;
+  const respondiendo = feedback?.tipo === "guardando" || feedback?.tipo === "ok";
+  const bloqueado = enCooldown || respondiendo || pegada;
+
+  // Cuenta regresiva del cooldown (1s)
+  useEffect(() => {
+    if (!enCooldown) return;
+    const t = setInterval(() => {
+      setRestante(cooldownRestante(claseId, desafio.n));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [enCooldown, claseId, desafio.n]);
+
+  // Cerrar con Escape + foco inicial en el botón de cerrar
+  useEffect(() => {
+    cerrarRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function responder(id: string) {
+    if (bloqueado) return;
+    if (id === desafio.correcta) {
+      setFeedback({ tipo: "guardando" });
+      const ok = await onCorrecta(desafio.n);
+      if (ok) {
+        setFeedback({ tipo: "ok" });
+        // dejamos ver el "¡Correcta!" un instante antes de cerrar
+        setTimeout(onClose, 1200);
+      } else {
+        setFeedback({ tipo: "fallo-guardado" });
+      }
+    } else {
+      iniciarCooldown(claseId, desafio.n);
+      setRestante(cooldownRestante(claseId, desafio.n));
+      setFeedback({ tipo: "error" });
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-titulo"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal__head" style={{ background: color }}>
+          <div className="modal__head-info">
+            <span className="modal__figunum">Figurita {num}</span>
+            <span className="figu__dif">{desafio.dificultad}</span>
+          </div>
+          <button
+            ref={cerrarRef}
+            type="button"
+            className="modal__x"
+            onClick={onClose}
+            aria-label="Cerrar desafío"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="modal__body">
+          <h2 className="modal__titulo" id="modal-titulo">{desafio.titulo}</h2>
+
+          {imgRota ? (
+            <div className="modal__img-placeholder">
+              El enunciado de este desafío todavía no está cargado.
+              <br />
+              (Falta la imagen <code>{desafio.desafioImg}</code>)
+            </div>
+          ) : (
+            <img
+              className="modal__img"
+              src={desafio.desafioImg}
+              alt={`Enunciado del desafío: ${desafio.titulo}`}
+              onError={() => setImgRota(true)}
+            />
+          )}
+
+          <p className="modal__pregunta">¿Cuál es la respuesta?</p>
+
+          <div className="modal__opciones">
+            {desafio.opciones.map((op) => (
+              <button
+                key={op.id}
+                type="button"
+                className="opcion"
+                disabled={bloqueado}
+                onClick={() => responder(op.id)}
+              >
+                {op.texto}
+              </button>
+            ))}
+          </div>
+
+          {pegada && feedback?.tipo !== "ok" && (
+            <div className="modal__feedback modal__feedback--ok" role="status">
+              ¡Tu clase ya pegó esta figurita! 🎉 Podés cerrar y seguir con otra.
+            </div>
+          )}
+
+          {feedback?.tipo === "ok" && (
+            <div className="modal__feedback modal__feedback--ok" role="status">
+              ¡Correcta! 🎉 Pegando la figurita para toda la clase…
+            </div>
+          )}
+
+          {feedback?.tipo === "guardando" && (
+            <div className="modal__feedback" role="status">Guardando…</div>
+          )}
+
+          {feedback?.tipo === "fallo-guardado" && (
+            <div className="modal__feedback modal__feedback--error" role="alert">
+              ¡Era la correcta! Pero no pudimos guardarla. Revisá tu conexión y
+              probá de nuevo.
+            </div>
+          )}
+
+          {feedback?.tipo === "error" && (
+            <div className="modal__feedback modal__feedback--error" role="alert">
+              Ups, no era esa. Podés seguir con otro desafío y volver en 5 minutos.
+            </div>
+          )}
+
+          {enCooldown && !pegada && (
+            <div className="modal__cooldown" role="status">
+              <span aria-hidden="true">⏳</span>
+              Podés volver a intentar en <strong>{formatoRestante(restante)}</strong>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

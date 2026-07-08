@@ -1,0 +1,13 @@
+# deps / build
+node_modules/
+dist/
+
+# env — NO commitear claves
+.env.local
+.env*.local
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.local
