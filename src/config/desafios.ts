@@ -27,52 +27,52 @@ const N = (...nums: number[]): Opcion[] =>          // helper numérico
 export const DESAFIOS: Desafio[] = [
   { n: 1, cardRef: 1, titulo: "Regalo de cumpleaños", origen: "Países Bajos",
     dificultad: "Fácil", habilidades: ["Pensamiento algorítmico"],
-    pais: "Uruguay", figuritaImg: "/assets/figuritas/Uruguay.png", desafioImg: "/assets/desafios/01.png",
+    pais: "Uruguay", figuritaImg: "/assets/figuritas/Uruguay.png", desafioImg: "/assets/desafios/01.jpg",
     opciones: L("A", "B", "C", "D", "E", "F"), correcta: "a" },
 
   { n: 2, cardRef: 2, titulo: "Tréboles giratorios", origen: "Irlanda",
     dificultad: "Fácil", habilidades: ["Abstracción", "Generalización"],
-    pais: "Brasil", figuritaImg: "/assets/figuritas/Brasil.png", desafioImg: "/assets/desafios/02.png",
+    pais: "Brasil", figuritaImg: "/assets/figuritas/Brasil.png", desafioImg: "/assets/desafios/02.jpg",
     opciones: L("A", "B", "C", "D"), correcta: "d" },
 
   { n: 3, cardRef: 4, titulo: "Ruidos en el tráfico", origen: "Reino Unido",
     dificultad: "Fácil", habilidades: ["Abstracción", "Pensamiento algorítmico"],
-    pais: "Canada", figuritaImg: "/assets/figuritas/Canada.png", desafioImg: "/assets/desafios/03.png",
+    pais: "Canada", figuritaImg: "/assets/figuritas/Canada.png", desafioImg: "/assets/desafios/03.jpg",
     opciones: N(2, 3, 4, 5), correcta: "3" },
 
   { n: 4, cardRef: 5, titulo: "Árboles", origen: "Uzbekistán",
     dificultad: "Fácil", habilidades: ["Pensamiento algorítmico", "Evaluación"],
-    pais: "Estados Unidos", figuritaImg: "/assets/figuritas/Estados Unidos.png", desafioImg: "/assets/desafios/04.png",
+    pais: "Estados Unidos", figuritaImg: "/assets/figuritas/Estados Unidos.png", desafioImg: "/assets/desafios/04.jpg",
     opciones: N(3, 4, 5, 6), correcta: "4" },
 
   { n: 5, cardRef: 7, titulo: "Sonajero de Oliva", origen: "Eslovaquia",
     dificultad: "Fácil", habilidades: ["Generalización"],
-    pais: "Colombia", figuritaImg: "/assets/figuritas/Colombia.png", desafioImg: "/assets/desafios/05.png",
+    pais: "Colombia", figuritaImg: "/assets/figuritas/Colombia.png", desafioImg: "/assets/desafios/05.jpg",
     opciones: L("A", "B", "C", "D"), correcta: "a" },
 
   { n: 6, cardRef: 9, titulo: "Punto de encuentro", origen: "Polonia",
     dificultad: "Media", habilidades: ["Abstracción", "Descomposición"],
-    pais: "Paraguay", figuritaImg: "/assets/figuritas/Paraguay.png", desafioImg: "/assets/desafios/06.png",
+    pais: "Paraguay", figuritaImg: "/assets/figuritas/Paraguay.png", desafioImg: "/assets/desafios/06.jpg",
     opciones: L("A", "B", "C", "D", "E", "F"), correcta: "d" },
 
   { n: 7, cardRef: 10, titulo: "Caramelos", origen: "Lituania",
     dificultad: "Media", habilidades: ["Descomposición", "Evaluación"],
-    pais: "Ecuador", figuritaImg: "/assets/figuritas/Ecuador.png", desafioImg: "/assets/desafios/07.png",
+    pais: "Ecuador", figuritaImg: "/assets/figuritas/Ecuador.png", desafioImg: "/assets/desafios/07.jpg",
     opciones: L("A", "B", "C", "D"), correcta: "b" },
 
   { n: 8, cardRef: 11, titulo: "Pulsera con un mensaje", origen: "Irlanda",
     dificultad: "Media", habilidades: ["Generalización", "Descomposición"],
-    pais: "Panama", figuritaImg: "/assets/figuritas/Panama.png", desafioImg: "/assets/desafios/08.png",
+    pais: "Panama", figuritaImg: "/assets/figuritas/Panama.png", desafioImg: "/assets/desafios/08.jpg",
     opciones: L("A", "B", "C", "D"), correcta: "b" },
 
   { n: 9, cardRef: 13, titulo: "¿Qué pintó el pintor?", origen: "Estados Unidos",
     dificultad: "Difícil", habilidades: ["Abstracción"],
-    pais: "Mexico", figuritaImg: "/assets/figuritas/Mexico.png", desafioImg: "/assets/desafios/09.png",
+    pais: "Mexico", figuritaImg: "/assets/figuritas/Mexico.png", desafioImg: "/assets/desafios/09.jpg",
     opciones: L("A", "B", "C", "D"), correcta: "a" },
 
   { n: 10, cardRef: 14, titulo: "Laberinto", origen: "Bulgaria",
     dificultad: "Difícil", habilidades: ["Pensamiento algorítmico"],
-    pais: "Argentina", figuritaImg: "/assets/figuritas/Argentina.png", desafioImg: "/assets/desafios/10.png",
+    pais: "Argentina", figuritaImg: "/assets/figuritas/Argentina.png", desafioImg: "/assets/desafios/10.jpg",
     opciones: N(6, 7, 8, 9), correcta: "8" },
 ];
 

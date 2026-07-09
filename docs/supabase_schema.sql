@@ -21,9 +21,13 @@ create table if not exists clases (
 create table if not exists progreso (
   clase_id     text not null references clases(id) on delete cascade,
   figurita     int  not null,               -- 1..10
+  autor        text,                        -- nombre del estudiante que la pegó (scoreboard)
   unlocked_at  timestamptz default now(),
   primary key (clase_id, figurita)
 );
+
+-- Migración para bases creadas antes del scoreboard (no rompe si ya existe):
+alter table progreso add column if not exists autor text;
 
 -- ---------- REALTIME ----------
 -- Publica cambios de 'progreso' para las suscripciones en vivo del álbum y del panel docente.

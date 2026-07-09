@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Desafio } from "../config/desafios";
 import { cooldownRestante, formatoRestante, iniciarCooldown } from "../lib/cooldown";
-import { colorFigurita } from "./Figurita";
+import { colorSeleccion } from "./Figurita";
 
 type Props = {
   desafio: Desafio;
@@ -22,9 +22,10 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
   const [restante, setRestante] = useState(() => cooldownRestante(claseId, desafio.n));
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [imgRota, setImgRota] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const cerrarRef = useRef<HTMLButtonElement>(null);
 
-  const color = colorFigurita(desafio.n);
+  const color = colorSeleccion(desafio.pais);
   const num = String(desafio.n).padStart(2, "0");
   const enCooldown = restante > 0;
   const respondiendo = feedback?.tipo === "guardando" || feedback?.tipo === "ok";
@@ -39,15 +40,21 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
     return () => clearInterval(t);
   }, [enCooldown, claseId, desafio.n]);
 
-  // Cerrar con Escape + foco inicial en el botón de cerrar
+  // Foco inicial en el botón de cerrar
   useEffect(() => {
     cerrarRef.current?.focus();
+  }, []);
+
+  // Escape: primero cierra la imagen ampliada, después el modal
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      if (lightbox) setLightbox(false);
+      else onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, lightbox]);
 
   async function responder(id: string) {
     if (bloqueado) return;
@@ -77,7 +84,7 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
         aria-labelledby="modal-titulo"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal__head" style={{ background: color }}>
+        <div className="modal__head" style={{ background: color.bg, color: color.fg }}>
           <div className="modal__head-info">
             <span className="modal__figunum">Figurita {num}</span>
             <span className="figu__dif">{desafio.dificultad}</span>
@@ -103,12 +110,22 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
               (Falta la imagen <code>{desafio.desafioImg}</code>)
             </div>
           ) : (
-            <img
-              className="modal__img"
-              src={desafio.desafioImg}
-              alt={`Enunciado del desafío: ${desafio.titulo}`}
-              onError={() => setImgRota(true)}
-            />
+            <>
+              <button
+                type="button"
+                className="modal__img-btn"
+                onClick={() => setLightbox(true)}
+                aria-label="Ampliar el enunciado del desafío"
+              >
+                <img
+                  className="modal__img"
+                  src={desafio.desafioImg}
+                  alt={`Enunciado del desafío: ${desafio.titulo}`}
+                  onError={() => setImgRota(true)}
+                />
+                <span className="modal__img-hint">Tocá la imagen para verla más grande</span>
+              </button>
+            </>
           )}
 
           <p className="modal__pregunta">¿Cuál es la respuesta?</p>
@@ -129,13 +146,13 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
 
           {pegada && feedback?.tipo !== "ok" && (
             <div className="modal__feedback modal__feedback--ok" role="status">
-              ¡Tu clase ya pegó esta figurita! 🎉 Podés cerrar y seguir con otra.
+              ¡Tu clase ya pegó esta figurita! Podés cerrar y seguir con otra.
             </div>
           )}
 
           {feedback?.tipo === "ok" && (
             <div className="modal__feedback modal__feedback--ok" role="status">
-              ¡Correcta! 🎉 Pegando la figurita para toda la clase…
+              ¡Correcta! Pegando la figurita para toda la clase…
             </div>
           )}
 
@@ -158,12 +175,43 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
 
           {enCooldown && !pegada && (
             <div className="modal__cooldown" role="status">
-              <span aria-hidden="true">⏳</span>
               Podés volver a intentar en <strong>{formatoRestante(restante)}</strong>
             </div>
           )}
         </div>
       </div>
+
+      {lightbox && !imgRota && (
+        <div
+          className="lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Enunciado ampliado: ${desafio.titulo}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightbox(false);
+          }}
+        >
+          <button
+            type="button"
+            className="lightbox__x"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(false);
+            }}
+            aria-label="Cerrar imagen ampliada"
+            autoFocus
+          >
+            ✕
+          </button>
+          <img
+            className="lightbox__img"
+            src={desafio.desafioImg}
+            alt={`Enunciado del desafío: ${desafio.titulo}`}
+          />
+          <p className="lightbox__hint">Tocá en cualquier lado para volver</p>
+        </div>
+      )}
     </div>
   );
 }

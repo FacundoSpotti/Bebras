@@ -72,34 +72,37 @@ export default function Onboarding() {
 
   return (
     <div className="onb">
-      <img
-        className="onb__logo"
-        src="/assets/Property 1=Negro.svg"
-        alt="THEA — the electric academy"
-      />
-      <h1>Álbum Bebras 2026</h1>
-      <p className="onb__sub">Desafíos de ingenio para completar entre toda la clase.</p>
+      <div className="onb__card">
+        <img
+          className="onb__logo"
+          src="/assets/Property 1=Default.svg"
+          alt="THEA — the electric academy"
+        />
+        <h1>Álbum Bebras 2026</h1>
+        <p className="onb__sub">Desafíos de ingenio para completar entre toda la clase.</p>
 
-      {modo === "inicio" && (
-        <div className="onb__opciones">
-          <button
-            type="button"
-            className="onb__rol onb__rol--estudiante"
-            onClick={() => cambiarModo("estudiante")}
-          >
-            Soy estudiante
-          </button>
-          <button
-            type="button"
-            className="onb__rol onb__rol--docente"
-            onClick={() => cambiarModo("docente")}
-          >
-            Soy docente
-          </button>
-        </div>
-      )}
+        {modo === "inicio" && (
+          <div className="onb__opciones">
+            <button
+              type="button"
+              className="onb__rol onb__rol--estudiante"
+              onClick={() => cambiarModo("estudiante")}
+            >
+              <span className="onb__rol-titulo">Soy estudiante</span>
+              <span className="onb__rol-desc">Entrá con el link o código de tu clase</span>
+            </button>
+            <button
+              type="button"
+              className="onb__rol onb__rol--docente"
+              onClick={() => cambiarModo("docente")}
+            >
+              <span className="onb__rol-titulo">Soy docente</span>
+              <span className="onb__rol-desc">Subí tu Excel y gestioná tus clases</span>
+            </button>
+          </div>
+        )}
 
-      {modo === "estudiante" && (
+        {modo === "estudiante" && (
         <form className="onb__form" onSubmit={entrarEstudiante}>
           <label>
             Código de tu clase
@@ -119,9 +122,9 @@ export default function Onboarding() {
             ← Volver
           </button>
         </form>
-      )}
+        )}
 
-      {modo === "docente" && (
+        {modo === "docente" && (
         <form className="onb__form" onSubmit={entrarDocente}>
           <label>
             Tu nombre
@@ -146,7 +149,10 @@ export default function Onboarding() {
             ← Volver
           </button>
         </form>
-      )}
+        )}
+      </div>
+
+      <p className="onb__pie">THEA — the electric academy · Desafío Bebras 2026</p>
     </div>
   );
 }

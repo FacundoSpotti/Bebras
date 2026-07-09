@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase, supabaseConfigurado, type ClaseRow, type ProgresoRow } from "../lib/supabase";
 import { DESAFIOS, TOTAL_FIGURITAS, desafioPorN } from "../config/desafios";
+import { getNombreEstudiante, setNombreEstudiante } from "../lib/estudiante";
 import BarraProgreso from "../components/BarraProgreso";
 import Figurita from "../components/Figurita";
 import ModalDesafio from "../components/ModalDesafio";
@@ -10,22 +11,31 @@ type Props = { claseId: string };
 
 type Estado = "cargando" | "ok" | "no-encontrada" | "error";
 
+type Toast = { id: number; texto: string };
+
 // Franjas decorativas de la banda del título (como en el prototipo)
 const DECO = ["#ffbc00", "#fb4747", "#fb5d7f", "#8a5ad1"];
 
 export default function Album({ claseId }: Props) {
   const [estado, setEstado] = useState<Estado>("cargando");
   const [clase, setClase] = useState<ClaseRow | null>(null);
-  const [pegadas, setPegadas] = useState<Set<number>>(new Set());
+  // figurita → autor (null si no sabemos quién la pegó)
+  const [pegadas, setPegadas] = useState<Map<number, string | null>>(new Map());
   const [animadas, setAnimadas] = useState<Set<number>>(new Set());
   const [modalN, setModalN] = useState<number | null>(null);
   const [feliCerrada, setFeliCerrada] = useState(false);
+  const [nombre, setNombre] = useState<string | null>(() => getNombreEstudiante());
+  const [nombreInput, setNombreInput] = useState("");
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastId = useRef(0);
+  const nombreRef = useRef(nombre);
+  nombreRef.current = nombre;
 
-  const agregarFigurita = useCallback((n: number, animar: boolean) => {
+  const agregarFigurita = useCallback((n: number, autor: string | null, animar: boolean) => {
     setPegadas((prev) => {
       if (prev.has(n)) return prev;
-      const next = new Set(prev);
-      next.add(n);
+      const next = new Map(prev);
+      next.set(n, autor);
       return next;
     });
     if (animar) {
@@ -33,7 +43,15 @@ export default function Album({ claseId }: Props) {
     }
   }, []);
 
-  // Carga inicial: clase + progreso
+  const avisar = useCallback((texto: string) => {
+    const id = ++toastId.current;
+    setToasts((prev) => [...prev, { id, texto }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  }, []);
+
+  // Carga inicial: clase + progreso (con autor)
   useEffect(() => {
     if (!supabaseConfigurado) {
       setEstado("error");
@@ -60,14 +78,21 @@ export default function Album({ claseId }: Props) {
 
       const { data: progData, error: progError } = await supabase
         .from("progreso")
-        .select("figurita")
+        .select("figurita, autor")
         .eq("clase_id", claseId);
       if (cancelado) return;
       if (progError) {
         setEstado("error");
         return;
       }
-      setPegadas(new Set((progData ?? []).map((p: { figurita: number }) => p.figurita)));
+      setPegadas(
+        new Map(
+          ((progData ?? []) as { figurita: number; autor: string | null }[]).map((p) => [
+            p.figurita,
+            p.autor,
+          ])
+        )
+      );
       setEstado("ok");
     })();
 
@@ -85,28 +110,45 @@ export default function Album({ claseId }: Props) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "progreso", filter: `clase_id=eq.${claseId}` },
         (payload) => {
-          const fila = payload.new as ProgresoRow;
-          agregarFigurita(fila.figurita, true);
+          const fila = payload.new as ProgresoRow & { autor?: string | null };
+          const autor = fila.autor ?? null;
+          agregarFigurita(fila.figurita, autor, true);
+          // Aviso solo si lo pegó otra persona (mi propio acierto ya se ve)
+          if (autor && autor !== nombreRef.current) {
+            const d = desafioPorN(fila.figurita);
+            avisar(`${autor} pegó la figurita ${String(fila.figurita).padStart(2, "0")}${d ? ` · ${d.pais}` : ""}`);
+          }
         }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [claseId, agregarFigurita]);
+  }, [claseId, agregarFigurita, avisar]);
 
-  // Respuesta correcta → upsert compartido (idempotente)
+  // Respuesta correcta → upsert compartido (idempotente), con autor
   const desbloquear = useCallback(
     async (n: number): Promise<boolean> => {
       const { error } = await supabase
         .from("progreso")
-        .upsert({ clase_id: claseId, figurita: n }, { onConflict: "clase_id,figurita" });
+        .upsert(
+          { clase_id: claseId, figurita: n, autor: nombreRef.current },
+          { onConflict: "clase_id,figurita" }
+        );
       if (error) return false;
-      agregarFigurita(n, true);
+      agregarFigurita(n, nombreRef.current, true);
       return true;
     },
     [claseId, agregarFigurita]
   );
+
+  function guardarNombre(e: FormEvent) {
+    e.preventDefault();
+    const n = nombreInput.trim();
+    if (!n) return;
+    setNombreEstudiante(n);
+    setNombre(n);
+  }
 
   if (!supabaseConfigurado) {
     return (
@@ -124,7 +166,7 @@ export default function Album({ claseId }: Props) {
     return (
       <div className="estado">
         <h2>Cargando tu álbum…</h2>
-        <p>Un segundito, estamos despegando las figuritas. ✨</p>
+        <p>Un segundito, estamos despegando las figuritas.</p>
       </div>
     );
   }
@@ -152,14 +194,67 @@ export default function Album({ claseId }: Props) {
     );
   }
 
+  // Antes de entrar al álbum, cada estudiante pone su nombre (una sola vez
+  // por dispositivo). Sirve para el registro de quién pega cada figurita.
+  if (!nombre) {
+    return (
+      <div className="onb">
+        <form className="onb__card gate" onSubmit={guardarNombre}>
+          <img
+            className="onb__logo"
+            src="/assets/Property 1=Default.svg"
+            alt="THEA — the electric academy"
+          />
+          <h1>¡Hola!</h1>
+          <p className="onb__sub">
+            Estás entrando al álbum de <strong>{clase.label}</strong>.
+            <br />
+            Contanos tu nombre para saber quién pega cada figurita.
+          </p>
+          <div className="onb__form">
+            <label>
+              Tu nombre
+              <input
+                type="text"
+                value={nombreInput}
+                onChange={(e) => setNombreInput(e.target.value)}
+                placeholder="Escribí tu nombre"
+                maxLength={30}
+                autoFocus
+              />
+            </label>
+            <button type="submit" className="onb__submit" disabled={!nombreInput.trim()}>
+              Entrar al álbum
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   const desafioModal = modalN != null ? desafioPorN(modalN) : undefined;
   const completo = pegadas.size >= TOTAL_FIGURITAS;
+
+  // Scoreboard: cuántas figuritas pegó cada estudiante (y cuáles)
+  const score = new Map<string, number[]>();
+  for (const [fig, autor] of pegadas) {
+    if (!autor) continue;
+    const lista = score.get(autor) ?? [];
+    lista.push(fig);
+    score.set(autor, lista);
+  }
+  const ranking = [...score.entries()]
+    .map(([autor, figus]) => ({ autor, figus: figus.sort((a, b) => a - b) }))
+    .sort((a, b) => b.figus.length - a.figus.length || a.autor.localeCompare(b.autor));
 
   return (
     <div>
       <header className="nav">
         <img className="nav__logo" src="/assets/logotipo.svg" alt="THEA — the electric academy" />
-        <span className="nav__clase">{clase.label}</span>
+        <span className="nav__clase">
+          {clase.label}
+          <span className="nav__usuario">{nombre}</span>
+        </span>
       </header>
 
       <section className="banda">
@@ -181,20 +276,49 @@ export default function Album({ claseId }: Props) {
 
       <section className="progreso">
         <p className="progreso__label">Progreso</p>
-        <BarraProgreso desbloqueadas={pegadas} />
+        <BarraProgreso desbloqueadas={new Set(pegadas.keys())} />
       </section>
 
       <main className="grilla">
-        {DESAFIOS.map((d) => (
+        {DESAFIOS.map((d, i) => (
           <Figurita
             key={d.n}
             desafio={d}
+            claseId={claseId}
             pegada={pegadas.has(d.n)}
+            autor={pegadas.get(d.n) ?? null}
             animada={animadas.has(d.n)}
+            indice={i}
             onAbrir={setModalN}
           />
         ))}
       </main>
+
+      {ranking.length > 0 && (
+        <section className="score">
+          <h2 className="score__titulo">Scoreboard de la clase</h2>
+          <p className="score__hint">Quién pegó cada figurita. Lo importante es completarlo entre todos.</p>
+          <ol className="score__lista">
+            {ranking.map((r, i) => (
+              <li className="score__fila" key={r.autor}>
+                <span className="score__pos">{i + 1}</span>
+                <span className="score__nombre">
+                  {r.autor}
+                  {r.autor === nombre && <span className="score__vos"> (vos)</span>}
+                </span>
+                <span className="score__figus">
+                  {r.figus.map((f) => (
+                    <span className="score__chip" key={f}>{String(f).padStart(2, "0")}</span>
+                  ))}
+                </span>
+                <span className="score__total">
+                  {r.figus.length} {r.figus.length === 1 ? "figurita" : "figuritas"}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {desafioModal && (
         <ModalDesafio
@@ -207,6 +331,14 @@ export default function Album({ claseId }: Props) {
       )}
 
       {completo && !feliCerrada && <Felicitacion onCerrar={() => setFeliCerrada(true)} />}
+
+      {toasts.length > 0 && (
+        <div className="toasts" role="status" aria-live="polite">
+          {toasts.map((t) => (
+            <div className="toast" key={t.id}>{t.texto}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

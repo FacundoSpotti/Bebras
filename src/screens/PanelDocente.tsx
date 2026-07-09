@@ -115,7 +115,7 @@ export default function PanelDocente() {
       }
       setFeedback({
         tipo: "ok",
-        texto: `${filasClases.length} ${filasClases.length === 1 ? "clase cargada" : "clases cargadas"} ✔`,
+        texto: `${filasClases.length} ${filasClases.length === 1 ? "clase cargada" : "clases cargadas"} ✓`,
       });
       await cargarClases();
     } catch {
@@ -123,6 +123,21 @@ export default function PanelDocente() {
     } finally {
       setSubiendo(false);
     }
+  }
+
+  async function eliminarClase(clase: ClaseRow) {
+    const seguro = window.confirm(
+      `¿Eliminar la clase "${clase.label}"?\n\nSe borra también su progreso (las figuritas pegadas). Esta acción no se puede deshacer.`
+    );
+    if (!seguro) return;
+    const { error } = await supabase.from("clases").delete().eq("id", clase.id);
+    if (error) {
+      setFeedback({ tipo: "error", texto: "No pudimos eliminar la clase. Probá de nuevo." });
+      return;
+    }
+    setClases((prev) => prev.filter((c) => c.id !== clase.id));
+    misClasesRef.current.delete(clase.id);
+    setFeedback({ tipo: "ok", texto: `Clase "${clase.label}" eliminada.` });
   }
 
   async function copiarLink(claseId: string) {
@@ -170,7 +185,7 @@ export default function PanelDocente() {
 
       <main className="panel__main">
         <div className="panel__saludo">
-          <h1>¡Hola, {docente}! 👋</h1>
+          <h1>¡Hola, {docente}!</h1>
           <button type="button" className="panel__salir" onClick={salir}>
             Salir
           </button>
@@ -214,7 +229,7 @@ export default function PanelDocente() {
           {!cargando && clases.length === 0 && (
             <p className="panel__vacio">
               Todavía no tenés clases cargadas. Subí tu Excel acá arriba y van a
-              aparecer todas juntas. 🙌
+              aparecer todas juntas.
             </p>
           )}
 
@@ -243,6 +258,15 @@ export default function PanelDocente() {
                     onClick={() => copiarLink(c.id)}
                   >
                     {copiado === c.id ? "¡Copiado! ✓" : "Copiar link"}
+                  </button>
+                  <button
+                    type="button"
+                    className="clase-item__eliminar"
+                    onClick={() => eliminarClase(c)}
+                    aria-label={`Eliminar la clase ${c.label}`}
+                    title="Eliminar clase"
+                  >
+                    Eliminar
                   </button>
                 </div>
               );

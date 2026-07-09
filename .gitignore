@@ -5,6 +5,8 @@ dist/
 # env — NO commitear claves
 .env.local
 .env*.local
+credenciales.txt
+password_supabase.txt
 
 # editor / os
 .vscode/*

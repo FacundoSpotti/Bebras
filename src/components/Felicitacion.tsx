@@ -6,8 +6,11 @@ type Props = {
 export default function Felicitacion({ onCerrar }: Props) {
   return (
     <div className="feli-overlay">
+      <div className="feli__festejo" aria-hidden="true">
+        <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
+      </div>
       <div className="feli" role="dialog" aria-modal="true" aria-labelledby="feli-titulo">
-        <div className="feli__emoji" aria-hidden="true">🎉🏆🎉</div>
+        <div className="feli__marca" aria-hidden="true">10/10</div>
         <h2 id="feli-titulo">¡Álbum completo!</h2>
         <p>
           ¡Felicitaciones! Entre toda la clase pegaron las 10 figuritas del
@@ -18,7 +21,7 @@ export default function Felicitacion({ onCerrar }: Props) {
         {/* PREMIO: definir — completar cuando esté el premio final
             (imagen, código, certificado, etc.) */}
         <div className="feli__premio">
-          🎁 Acá va el premio para la clase.
+          Acá va el premio para la clase.
           <br />
           <small>(Muy pronto: ¡estamos preparando algo lindo!)</small>
         </div>
