@@ -12,7 +12,6 @@ type Props = {
 };
 
 type Feedback =
-  | { tipo: "ok" }
   | { tipo: "error" }         // respuesta incorrecta
   | { tipo: "guardando" }
   | { tipo: "fallo-guardado" } // upsert falló (red, etc.)
@@ -28,7 +27,7 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
   const color = colorSeleccion(desafio.pais);
   const num = String(desafio.n).padStart(2, "0");
   const enCooldown = restante > 0;
-  const respondiendo = feedback?.tipo === "guardando" || feedback?.tipo === "ok";
+  const respondiendo = feedback?.tipo === "guardando";
   const bloqueado = enCooldown || respondiendo || pegada;
 
   // Cuenta regresiva del cooldown (1s)
@@ -62,9 +61,8 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
       setFeedback({ tipo: "guardando" });
       const ok = await onCorrecta(desafio.n);
       if (ok) {
-        setFeedback({ tipo: "ok" });
-        // dejamos ver el "¡Correcta!" un instante antes de cerrar
-        setTimeout(onClose, 1200);
+        // se cierra enseguida: la celebración se ve en la figurita
+        onClose();
       } else {
         setFeedback({ tipo: "fallo-guardado" });
       }
@@ -144,15 +142,9 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
             ))}
           </div>
 
-          {pegada && feedback?.tipo !== "ok" && (
+          {pegada && (
             <div className="modal__feedback modal__feedback--ok" role="status">
               ¡Tu clase ya pegó esta figurita! Podés cerrar y seguir con otra.
-            </div>
-          )}
-
-          {feedback?.tipo === "ok" && (
-            <div className="modal__feedback modal__feedback--ok" role="status">
-              ¡Correcta! Pegando la figurita para toda la clase…
             </div>
           )}
 

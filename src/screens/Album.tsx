@@ -126,6 +126,24 @@ export default function Album({ claseId }: Props) {
     };
   }, [claseId, agregarFigurita, avisar]);
 
+  // Presencia: el estudiante se anuncia en el canal de su clase para que
+  // el docente pueda ver en vivo quién está conectado (estilo Kahoot).
+  // Es efímero: al cerrar la pestaña desaparece solo, no se guarda nada.
+  useEffect(() => {
+    if (!supabaseConfigurado || estado !== "ok" || !nombre) return;
+    const channel = supabase.channel(`presencia:${claseId}`, {
+      config: { presence: { key: nombre } },
+    });
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        channel.track({ nombre, desde: Date.now() });
+      }
+    });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [claseId, estado, nombre]);
+
   // Respuesta correcta → upsert compartido (idempotente), con autor
   const desbloquear = useCallback(
     async (n: number): Promise<boolean> => {

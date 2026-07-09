@@ -73,6 +73,7 @@ img { max-width: 100%; }
 button {
   font-family: inherit;
   cursor: pointer;
+  line-height: 1.2;
 }
 
 /* Foco de teclado bien visible en toda la app */
@@ -182,6 +183,8 @@ button {
   font-size: clamp(1.4rem, 3vw, 2rem);
   display: flex;
   align-items: center;
+  justify-content: center;
+  line-height: 1;
   padding: 8px 26px;
   border-radius: 16px;
   position: relative;
@@ -287,11 +290,15 @@ button {
   background: var(--blanco);
   color: #3a3a42;
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 7px 12px;
   font-size: 0.82rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   box-shadow: 0 2px 8px rgba(11, 11, 13, 0.10);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .figu__head {
@@ -313,11 +320,15 @@ button {
 .figu__dif {
   border: 2px solid currentColor;
   border-radius: 999px;
-  padding: 2px 10px;
+  padding: 4px 10px;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .figu__cuerpo {
@@ -393,10 +404,13 @@ button {
   color: var(--blanco);
   font-size: 0.72rem;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 6px 10px;
   border-radius: 999px;
   box-shadow: var(--sombra);
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 /* Fallback cuando falta la imagen de la figurita */
@@ -532,6 +546,10 @@ button {
   border-radius: 999px;
   width: 34px;
   height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1rem;
   font-weight: 800;
   line-height: 1;
@@ -614,6 +632,10 @@ button {
   border-radius: 999px;
   width: 40px;
   height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.05rem;
   font-weight: 800;
   line-height: 1;
@@ -652,12 +674,16 @@ button {
 
 .opcion {
   min-width: 64px;
-  padding: 12px 20px;
+  padding: 14px 20px;
   font-size: 1.15rem;
   font-weight: 800;
   border: 3px solid var(--negro);
   border-radius: 12px;
   background: var(--blanco);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   transition: transform 120ms ease, background-color 120ms ease;
 }
 
@@ -994,8 +1020,12 @@ button {
   background: transparent;
   border: 2px solid var(--negro);
   border-radius: 999px;
-  padding: 8px 18px;
+  padding: 10px 18px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   transition: background-color 150ms ease, color 150ms ease;
 }
 
@@ -1013,6 +1043,61 @@ button {
 .panel__hint { margin: 0 0 14px; color: #444; font-size: 0.9rem; }
 
 .panel__file { font-size: 0.95rem; }
+
+/* Alta manual de clase */
+.panel__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.panel__form label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: block;
+}
+
+.panel__form input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  border: 2px solid var(--blanco);
+  border-radius: 10px;
+  margin-top: 6px;
+  background: var(--blanco);
+  transition: border-color 150ms ease;
+}
+
+.panel__form input:hover { border-color: var(--gris); }
+
+.panel__form input:focus {
+  outline: none;
+  border-color: var(--azul);
+}
+
+.panel__form code {
+  background: var(--blanco);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.82em;
+}
+
+.panel__agregar {
+  background: var(--negro);
+  color: var(--blanco);
+  border: none;
+  border-radius: 10px;
+  padding: 11px 20px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.panel__agregar:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.panel__agregar:active:not(:disabled) { transform: scale(0.98); }
+.panel__agregar:disabled { opacity: 0.6; cursor: wait; }
 
 .panel__feedback {
   margin-top: 12px;
@@ -1048,6 +1133,21 @@ button {
 
 .clase-item__maestra { color: #555; font-size: 0.85rem; }
 
+.clase-item__codigo {
+  color: #555;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.clase-item__codigo code {
+  background: var(--gris-claro);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  user-select: all;
+}
+
 .clase-item__prog {
   display: flex;
   align-items: center;
@@ -1079,9 +1179,13 @@ button {
   color: var(--blanco);
   border: none;
   border-radius: 999px;
-  padding: 9px 18px;
+  padding: 10px 18px;
   font-weight: 700;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   transition: transform 120ms ease, background-color 200ms ease, opacity 120ms ease;
 }
 
@@ -1090,15 +1194,33 @@ button {
 
 .clase-item__copiar--ok { background: var(--teal); }
 
+.clase-item__copiar--codigo {
+  background: transparent;
+  color: var(--negro);
+  border: 2px solid var(--negro);
+}
+
+.clase-item__copiar--codigo:hover { opacity: 1; background: var(--gris-claro); }
+
+.clase-item__copiar--codigo.clase-item__copiar--ok {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--blanco);
+}
+
 .clase-item__eliminar {
   background: transparent;
   color: #b32020;
   border: 2px solid rgba(251, 71, 71, 0.45);
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: 9px 14px;
   font-weight: 700;
   font-size: 0.85rem;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
 }
 
@@ -1109,6 +1231,89 @@ button {
 }
 
 .clase-item__eliminar:active { transform: scale(0.97); }
+
+/* Estudiantes conectados (presencia en vivo, estilo Kahoot) */
+.presencia {
+  background: var(--blanco);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  animation: subir 300ms ease-out both;
+}
+
+.presencia__clase {
+  font-weight: 800;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.presencia__contador {
+  background: rgba(0, 184, 162, 0.15);
+  color: #00705f;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.presencia__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@keyframes chipEntra {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.presencia__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--gris-claro);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1;
+  animation: chipEntra 250ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.presencia__chip i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--teal);
+  flex-shrink: 0;
+}
+
+@keyframes latido {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 184, 162, 0.5); }
+  60%      { box-shadow: 0 0 0 5px rgba(0, 184, 162, 0); }
+}
+
+.presencia__chip i { animation: latido 2s ease-out infinite; }
+
+.presencia__chip--fuera { opacity: 0.55; }
+
+.presencia__chip--fuera i {
+  background: var(--gris);
+  animation: none;
+}
+
+.presencia__chip small {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #777;
+}
 
 .panel__vacio {
   text-align: center;
@@ -1171,6 +1376,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   flex-shrink: 0;
 }
 
@@ -1183,10 +1389,14 @@ button {
 .score__chip {
   background: var(--gris-claro);
   border-radius: 6px;
-  padding: 2px 7px;
+  padding: 4px 7px;
   font-size: 0.75rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .score__total {
