@@ -203,14 +203,18 @@ async function main() {
   await page.reload(); // forzar re-fetch para ver 10/10
   await page.waitForSelector(".grilla");
   await ready(page);
-  // Al llegar a 10/10 se muestra la felicitación por encima del álbum
+  // Al llegar a 10/10 se muestra la felicitación por encima del álbum, con
+  // el desbloqueo de las 5 medallas. Esperamos a que terminen de revelarse.
   await page.waitForSelector(".feli");
+  await page.waitForSelector(".medallas__cierre"); // aparece con las 5 medallas ya reveladas
   await page.waitForTimeout(500);
   // Quitar los toasts de realtime (avisos "fulano pegó...") para una toma limpia
   await page.evaluate(() => document.querySelectorAll(".toasts").forEach((e) => e.remove()));
   await shot(page, "12-felicitacion.png");
-  // Cerrar la felicitación para ver el álbum 10/10 limpio
-  await page.getByRole("button", { name: "Ver el álbum" }).click();
+  // Cerrar la felicitación para ver el álbum 10/10 limpio (quitamos el
+  // confetti para que no interfiera con el click)
+  await page.evaluate(() => document.querySelectorAll(".feli__festejo").forEach((e) => e.remove()));
+  await page.locator(".feli__cerrar").click({ timeout: 10000 });
   await page.waitForSelector(".feli", { state: "detached" }).catch(() => {});
   await ready(page);
   await page.evaluate(() => document.querySelectorAll(".toasts").forEach((e) => e.remove()));

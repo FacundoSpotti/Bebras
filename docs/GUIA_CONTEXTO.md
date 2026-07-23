@@ -126,9 +126,12 @@ y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
    pegó cada figurita. → *Captura 10 (álbum 4/10).*
 
 6. **Completar el álbum.** Al llegar a **10/10** aparece la **felicitación**:
-   badge **"10/10"**, **"¡Álbum completo!"**, el mensaje de festejo y un
-   espacio de **premio** (placeholder). Botón **"Ver el álbum"**.
-   → *Capturas 11 (álbum completo) y 12 (felicitación).*
+   badge **"10/10"**, **"¡Álbum completo!"** y, como **premio**, se desbloquean
+   una por una las **5 medallas del pensamiento computacional** (con animación
+   de celebración) hasta quedar las 5 juntas a la vista. Botón
+   **"Ver el álbum"**. Después, mientras el álbum esté completo, un botón
+   **"Ver nuestras medallas"** permite volver a verlas.
+   → *Capturas 11 (álbum completo) y 12 (felicitación con medallas).*
 
 ---
 
@@ -303,11 +306,15 @@ placeholder *"La clave compartida del equipo"*; botón **Entrar**; error
 ### Felicitación
 - Badge **10/10** · **¡Álbum completo!**
 - *"¡Felicitaciones! Entre toda la clase pegaron las 10 figuritas del Álbum
-  Bebras 2026. Resolvieron cada desafío pensando en equipo, y eso es lo más
-  importante: haber participado y aprendido juntos."*
-- Premio (placeholder): **Acá va el premio para la clase.** / *(Muy pronto:
-  ¡estamos preparando algo lindo!)*
+  Bebras 2026. Y como premio, ¡se ganaron las 5 medallas del pensamiento
+  computacional!"*
+- **Medallas desbloqueadas N/5** (se revelan de a una con animación)
+- Las 5 medallas: **Pensamiento algorítmico**, **Abstracción**,
+  **Generalización**, **Descomposición**, **Evaluación**
+- *"¡Colección completa! Cada medalla premia una forma de pensar que usaron
+  para resolver los desafíos."*
 - Botón **Ver el álbum**
+- En el álbum completo: botón **Ver nuestras medallas** (reabre la felicitación)
 
 ### Panel docente
 - Nav: **Panel docente** · Saludo **¡Hola, <Nombre>!** · botón **Salir**
@@ -402,7 +409,7 @@ capturar la página completa. Ruta local: `docs/capturas/`.
 | `09-cooldown.png` | Respuesta incorrecta + cuenta regresiva 5:00 | `https://raw.githubusercontent.com/FacundoSpotti/Bebras/main/docs/capturas/09-cooldown.png` |
 | `10-album-parcial.png` | Álbum 4/10 (mezcla pegadas / bloqueadas) | `https://raw.githubusercontent.com/FacundoSpotti/Bebras/main/docs/capturas/10-album-parcial.png` |
 | `11-album-completo.png` | Álbum 10/10 + scoreboard | `https://raw.githubusercontent.com/FacundoSpotti/Bebras/main/docs/capturas/11-album-completo.png` |
-| `12-felicitacion.png` | Felicitación al completar el álbum | `https://raw.githubusercontent.com/FacundoSpotti/Bebras/main/docs/capturas/12-felicitacion.png` |
+| `12-felicitacion.png` | Felicitación + 5 medallas desbloqueadas | `https://raw.githubusercontent.com/FacundoSpotti/Bebras/main/docs/capturas/12-felicitacion.png` |
 
 > **IMPORTANTE:** estos links RAW solo funcionan si el repositorio
 > `FacundoSpotti/Bebras` es **público** y las capturas fueron **pusheadas** a
@@ -418,8 +425,9 @@ capturar la página completa. Ruta local: `docs/capturas/`.
   desplegables nativos del sistema operativo no se pueden renderizar
   "abiertos" en una captura automatizada. Si se necesita mostrarlo desplegado,
   hay que hacerlo con una captura manual del navegador.
-- El **premio** de la felicitación es un **placeholder** ("Acá va el premio
-  para la clase") — todavía no está definido el premio real.
+- El **premio** de la felicitación son las **5 medallas** del pensamiento
+  computacional (una por habilidad), que se desbloquean con animación al
+  completar el álbum. *(Ya no es un placeholder.)*
 - Las **imágenes de los enunciados** (`docs/`→`public/assets/desafios/`) ya
   están cargadas; si faltara alguna, el modal muestra un placeholder sin
   romperse.

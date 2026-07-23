@@ -295,6 +295,15 @@ export default function Album({ claseId }: Props) {
       <section className="progreso">
         <p className="progreso__label">Progreso</p>
         <BarraProgreso desbloqueadas={new Set(pegadas.keys())} />
+        {completo && feliCerrada && (
+          <button
+            type="button"
+            className="ver-medallas"
+            onClick={() => setFeliCerrada(false)}
+          >
+            Ver nuestras medallas
+          </button>
+        )}
       </section>
 
       <main className="grilla">
