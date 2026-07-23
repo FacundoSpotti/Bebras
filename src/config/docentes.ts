@@ -1,6 +1,6 @@
 export const DOCENTES = [
   "Facundo", "Thiago", "Celeste", "Sofia", "Constanza",
-  "Francesca", "Agustín", "Joaquín", "Jose", "Mikaela",
+  "Francesca", "Agustín", "Joaquín", "Jose", "Mikaela", "Majo",
 ];
 
 // Clave única para todos los docentes. No es seguridad real.
