@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase, supabaseConfigurado, type ClaseRow, type ProgresoRow } from "../lib/supabase";
-import { DESAFIOS, TOTAL_FIGURITAS, desafioPorN } from "../config/desafios";
+import {
+  TOTAL_FIGURITAS,
+  TOTAL_PAGINAS,
+  FIGURITAS_POR_PAGINA,
+  desafioPorN,
+  desafiosDePagina,
+  pegadasDePagina,
+  paginaCompleta,
+  paginaDesbloqueada,
+  ultimaPaginaDesbloqueada,
+} from "../config/desafios";
 import { getNombreEstudiante, setNombreEstudiante } from "../lib/estudiante";
 import BarraProgreso from "../components/BarraProgreso";
 import Figurita from "../components/Figurita";
@@ -23,7 +33,12 @@ export default function Album({ claseId }: Props) {
   const [pegadas, setPegadas] = useState<Map<number, string | null>>(new Map());
   const [animadas, setAnimadas] = useState<Set<number>>(new Set());
   const [modalN, setModalN] = useState<number | null>(null);
-  const [feliCerrada, setFeliCerrada] = useState(false);
+  // Página que se está mirando (1..4). Se ajusta sola al cargar el progreso.
+  const [pagina, setPagina] = useState(1);
+  // Página cuya medalla se está festejando (null = no hay festejo abierto).
+  const [festejo, setFestejo] = useState<number | null>(null);
+  // Páginas que ya estaban completas al abrir: no se vuelven a festejar.
+  const yaFestejadas = useRef<Set<number> | null>(null);
   const [nombre, setNombre] = useState<string | null>(() => getNombreEstudiante());
   const [nombreInput, setNombreInput] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -85,14 +100,22 @@ export default function Album({ claseId }: Props) {
         setEstado("error");
         return;
       }
-      setPegadas(
-        new Map(
-          ((progData ?? []) as { figurita: number; autor: string | null }[]).map((p) => [
-            p.figurita,
-            p.autor,
-          ])
-        )
+      const mapa = new Map(
+        ((progData ?? []) as { figurita: number; autor: string | null }[]).map((p) => [
+          p.figurita,
+          p.autor,
+        ])
       );
+      setPegadas(mapa);
+      // Las páginas que ya venían completas no disparan festejo al entrar.
+      const set = new Set(mapa.keys());
+      const completasAlEntrar = new Set<number>();
+      for (let p = 1; p <= TOTAL_PAGINAS; p++) {
+        if (paginaCompleta(p, set)) completasAlEntrar.add(p);
+      }
+      yaFestejadas.current = completasAlEntrar;
+      // Arrancar en la última página desbloqueada (donde está el trabajo).
+      setPagina(ultimaPaginaDesbloqueada(set));
       setEstado("ok");
     })();
 
@@ -159,6 +182,21 @@ export default function Album({ claseId }: Props) {
     },
     [claseId, agregarFigurita]
   );
+
+  // Festejo: cuando una página se completa DURANTE la sesión, entrega su
+  // medalla. Las que ya venían completas al entrar no vuelven a festejarse
+  // (para eso está el botón "Ver nuestras medallas").
+  useEffect(() => {
+    if (estado !== "ok" || !yaFestejadas.current) return;
+    const set = new Set(pegadas.keys());
+    for (let p = 1; p <= TOTAL_PAGINAS; p++) {
+      if (paginaCompleta(p, set) && !yaFestejadas.current.has(p)) {
+        yaFestejadas.current.add(p);
+        setFestejo(p);
+        break;
+      }
+    }
+  }, [pegadas, estado]);
 
   function guardarNombre(e: FormEvent) {
     e.preventDefault();
@@ -251,7 +289,18 @@ export default function Album({ claseId }: Props) {
   }
 
   const desafioModal = modalN != null ? desafioPorN(modalN) : undefined;
+  const setPegadas_ = new Set(pegadas.keys());
   const completo = pegadas.size >= TOTAL_FIGURITAS;
+
+  // Estado de la página que se está mirando
+  const abierta = paginaDesbloqueada(pagina, setPegadas_);
+  const desafiosPag = desafiosDePagina(pagina);
+  const pegadasPag = pegadasDePagina(pagina, setPegadas_);
+  // Cuántas páginas completas tiene la clase (define las medallas ganadas)
+  let paginasCompletas = 0;
+  for (let p = 1; p <= TOTAL_PAGINAS; p++) {
+    if (paginaCompleta(p, setPegadas_)) paginasCompletas++;
+  }
 
   // Scoreboard: cuántas figuritas pegó cada estudiante (y cuáles)
   const score = new Map<string, number[]>();
@@ -287,39 +336,130 @@ export default function Album({ claseId }: Props) {
             ))}
           </div>
           <div className="banda__contador">
-            {pegadas.size}/{TOTAL_FIGURITAS}
+            {pegadasPag}/{FIGURITAS_POR_PAGINA}
           </div>
         </div>
       </section>
 
+      {/* Navegación entre las 4 páginas del álbum */}
+      <section className="paginas" aria-label="Páginas del álbum">
+        <button
+          type="button"
+          className="paginas__flecha"
+          onClick={() => setPagina((p) => Math.max(1, p - 1))}
+          disabled={pagina <= 1}
+          aria-label="Página anterior"
+        >
+          ‹
+        </button>
+        <div className="paginas__lista">
+          {Array.from({ length: TOTAL_PAGINAS }, (_, i) => i + 1).map((p) => {
+            const libre = paginaDesbloqueada(p, setPegadas_);
+            const lista = paginaCompleta(p, setPegadas_);
+            return (
+              <button
+                key={p}
+                type="button"
+                className={
+                  "paginas__item" +
+                  (p === pagina ? " paginas__item--activa" : "") +
+                  (!libre ? " paginas__item--bloqueada" : "") +
+                  (lista ? " paginas__item--completa" : "")
+                }
+                onClick={() => setPagina(p)}
+                aria-current={p === pagina ? "page" : undefined}
+                aria-label={
+                  `Página ${p}` +
+                  (lista ? ", completa" : !libre ? ", bloqueada" : "") +
+                  `: ${pegadasDePagina(p, setPegadas_)} de ${FIGURITAS_POR_PAGINA} figuritas`
+                }
+              >
+                <span className="paginas__num">{p}</span>
+                <span className="paginas__estado">
+                  {lista ? "✓" : !libre ? "🔒" : `${pegadasDePagina(p, setPegadas_)}/${FIGURITAS_POR_PAGINA}`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          className="paginas__flecha"
+          onClick={() => setPagina((p) => Math.min(TOTAL_PAGINAS, p + 1))}
+          disabled={pagina >= TOTAL_PAGINAS}
+          aria-label="Página siguiente"
+        >
+          ›
+        </button>
+        <span className="paginas__total">
+          Álbum completo: {pegadas.size}/{TOTAL_FIGURITAS}
+        </span>
+      </section>
+
       <section className="progreso">
-        <p className="progreso__label">Progreso</p>
-        <BarraProgreso desbloqueadas={new Set(pegadas.keys())} />
-        {completo && feliCerrada && (
+        <p className="progreso__label">Progreso · Página {pagina}</p>
+        <BarraProgreso
+          desbloqueadas={new Set(desafiosPag.filter((d) => pegadas.has(d.n)).map((d) => d.n))}
+          items={desafiosPag.map((d) => d.n)}
+        />
+        {paginasCompletas > 0 && (
           <button
             type="button"
             className="ver-medallas"
-            onClick={() => setFeliCerrada(false)}
+            onClick={() => setFestejo(Math.min(paginasCompletas, TOTAL_PAGINAS))}
           >
             Ver nuestras medallas
           </button>
         )}
       </section>
 
-      <main className="grilla">
-        {DESAFIOS.map((d, i) => (
-          <Figurita
-            key={d.n}
-            desafio={d}
-            claseId={claseId}
-            pegada={pegadas.has(d.n)}
-            autor={pegadas.get(d.n) ?? null}
-            animada={animadas.has(d.n)}
-            indice={i}
-            onAbrir={setModalN}
-          />
-        ))}
-      </main>
+      {abierta ? (
+        <main className="grilla">
+          {desafiosPag.map((d, i) => (
+            <Figurita
+              key={d.n}
+              desafio={d}
+              claseId={claseId}
+              pegada={pegadas.has(d.n)}
+              autor={pegadas.get(d.n) ?? null}
+              animada={animadas.has(d.n)}
+              indice={i}
+              onAbrir={setModalN}
+            />
+          ))}
+        </main>
+      ) : (
+        <>
+          {/* Página bloqueada: se ve en blanco y negro, sin poder jugarla */}
+          <div className="bloqueo">
+            <p className="bloqueo__titulo">Página {pagina} bloqueada</p>
+            <p className="bloqueo__texto">
+              Para abrirla, primero completá la página {pagina - 1}.
+            </p>
+            <button
+              type="button"
+              className="bloqueo__accion"
+              onClick={() => setPagina(pagina - 1)}
+            >
+              Ir a la página {pagina - 1}
+            </button>
+          </div>
+          <main className="grilla grilla--bloqueada" aria-hidden="true">
+            {desafiosPag.map((d, i) => (
+              <Figurita
+                key={d.n}
+                desafio={d}
+                claseId={claseId}
+                pegada={false}
+                autor={null}
+                animada={false}
+                indice={i}
+                onAbrir={() => {}}
+              />
+            ))}
+          </main>
+        </>
+      )}
 
       {ranking.length > 0 && (
         <section className="score">
@@ -357,7 +497,14 @@ export default function Album({ claseId }: Props) {
         />
       )}
 
-      {completo && !feliCerrada && <Felicitacion onCerrar={() => setFeliCerrada(true)} />}
+      {festejo !== null && (
+        <Felicitacion
+          pagina={festejo}
+          paginasCompletas={paginasCompletas}
+          albumCompleto={completo}
+          onCerrar={() => setFestejo(null)}
+        />
+      )}
 
       {toasts.length > 0 && (
         <div className="toasts" role="status" aria-live="polite">

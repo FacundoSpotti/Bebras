@@ -168,7 +168,7 @@ async function main() {
   await shot(page, "06-album-vacio.png", { fullPage: true });
 
   // 07 · Modal de desafío (figurita 1)
-  await page.locator("button.figu").first().click();
+  await page.locator("button.figu:not(.figu--pegada)").first().click();
   await page.waitForSelector(".modal");
   await ready(page);
   await shot(page, "07-modal-desafio.png");
@@ -180,7 +180,8 @@ async function main() {
   await shot(page, "08-respuesta-correcta.png");
 
   // 09 · Cooldown (abrir figurita 2 y responder mal → cuenta regresiva)
-  await page.locator("button.figu").first().click(); // ahora la 1 es "pegada" (div), primera button = figurita 2
+  // la 1 ya está pegada, así que la primera sin pegar es la figurita 2
+  await page.locator("button.figu:not(.figu--pegada)").first().click();
   await page.waitForSelector(".modal");
   await ready(page);
   await page.getByRole("button", { name: "A", exact: true }).click(); // la 2 correcta es "D" → "A" es incorrecta
@@ -203,8 +204,9 @@ async function main() {
   await page.reload(); // forzar re-fetch para ver 10/10
   await page.waitForSelector(".grilla");
   await ready(page);
-  // Al llegar a 10/10 se muestra la felicitación por encima del álbum, con
-  // el desbloqueo de las 5 medallas. Esperamos a que terminen de revelarse.
+  // Con la página completa, el botón "Ver nuestras medallas" abre la
+  // felicitación con la medalla ganada y las que faltan.
+  await page.getByRole("button", { name: "Ver nuestras medallas" }).click();
   await page.waitForSelector(".feli");
   await page.waitForSelector(".medallas__cierre"); // aparece con las 5 medallas ya reveladas
   await page.waitForTimeout(500);

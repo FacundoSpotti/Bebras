@@ -126,14 +126,18 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
             </>
           )}
 
-          <p className="modal__pregunta">¿Cuál es la respuesta?</p>
+          {/* Si la figurita ya está pegada, el modal es de repaso: se puede
+              ver el enunciado y la respuesta, pero no volver a responder. */}
+          <p className="modal__pregunta">
+            {pegada ? "La respuesta correcta era:" : "¿Cuál es la respuesta?"}
+          </p>
 
           <div className="modal__opciones">
             {desafio.opciones.map((op) => (
               <button
                 key={op.id}
                 type="button"
-                className="opcion"
+                className={`opcion${pegada && op.id === desafio.correcta ? " opcion--correcta" : ""}`}
                 disabled={bloqueado}
                 onClick={() => responder(op.id)}
               >
@@ -144,7 +148,7 @@ export default function ModalDesafio({ desafio, claseId, pegada, onCorrecta, onC
 
           {pegada && (
             <div className="modal__feedback modal__feedback--ok" role="status">
-              ¡Tu clase ya pegó esta figurita! Podés cerrar y seguir con otra.
+              ¡Tu clase ya pegó esta figurita! Estás viendo el desafío resuelto.
             </div>
           )}
 

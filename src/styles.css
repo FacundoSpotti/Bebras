@@ -228,6 +228,152 @@ button {
   animation: segPop 350ms ease-out;
 }
 
+/* ===== Navegación entre páginas del álbum ===== */
+
+.paginas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 24px 0;
+  flex-wrap: wrap;
+}
+
+.paginas__lista {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.paginas__flecha {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 2px solid var(--negro);
+  background: var(--blanco);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.paginas__flecha:hover:not(:disabled) {
+  background: var(--negro);
+  color: var(--blanco);
+  transform: translateY(-2px);
+}
+
+.paginas__flecha:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.paginas__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--gris-claro);
+  background: var(--blanco);
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 120ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.paginas__item:hover { transform: translateY(-2px); border-color: var(--gris); }
+
+.paginas__num { font-size: 0.95rem; }
+
+.paginas__estado {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #666;
+  font-variant-numeric: tabular-nums;
+}
+
+.paginas__item--activa {
+  border-color: var(--negro);
+  background: var(--negro);
+  color: var(--blanco);
+}
+
+.paginas__item--activa .paginas__estado { color: rgba(255, 255, 255, 0.75); }
+
+.paginas__item--completa {
+  border-color: var(--teal);
+}
+
+.paginas__item--completa .paginas__estado { color: var(--teal); }
+
+.paginas__item--activa.paginas__item--completa {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.paginas__item--activa.paginas__item--completa .paginas__estado {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.paginas__item--bloqueada {
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+
+.paginas__total {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Página bloqueada: aviso + grilla en blanco y negro */
+.bloqueo {
+  margin: 18px 24px 0;
+  background: var(--gris-claro);
+  border-radius: var(--radio);
+  padding: 22px 20px;
+  text-align: center;
+  animation: subir 350ms ease-out both;
+}
+
+.bloqueo__titulo {
+  margin: 0 0 6px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.bloqueo__texto { margin: 0; color: #444; }
+
+.bloqueo__accion {
+  margin-top: 14px;
+  background: var(--negro);
+  color: var(--blanco);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.bloqueo__accion:hover { transform: translateY(-2px); opacity: 0.9; }
+
+.grilla--bloqueada {
+  filter: grayscale(1);
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+.grilla--bloqueada .figu { animation: none; }
+
 .ver-medallas {
   margin-top: 14px;
   background: var(--violeta);
@@ -399,7 +545,35 @@ button {
   border: 3px solid var(--gris-claro);
 }
 
-.figu--pegada:hover { transform: none; box-shadow: none; }
+.figu--pegada:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sombra);
+}
+
+/* Pista para volver a ver el desafío de una figurita ya pegada */
+.figu__ver {
+  position: absolute;
+  left: 50%;
+  bottom: 58px;
+  transform: translateX(-50%) translateY(6px);
+  background: rgba(11, 11, 13, 0.86);
+  color: var(--blanco);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease, transform 150ms ease;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.figu--pegada:hover .figu__ver,
+.figu--pegada:focus-visible .figu__ver {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 .figu__img-wrap {
   flex: 1;
@@ -719,6 +893,15 @@ button {
   opacity: 0.45;
 }
 
+/* Modo repaso: la figurita ya está pegada y se marca la respuesta correcta */
+.opcion--correcta,
+.opcion--correcta:disabled {
+  opacity: 1;
+  background: rgba(0, 184, 162, 0.16);
+  border-color: var(--teal);
+  color: #00705f;
+}
+
 .modal__feedback {
   margin-top: 14px;
   padding: 12px 14px;
@@ -852,14 +1035,17 @@ button {
   display: block;
 }
 
+/* Altura pareja para que los pies de todas las medallas queden alineados */
 .medalla__img {
+  height: 122px;
+  object-fit: contain;
   box-shadow: 0 6px 18px rgba(11, 11, 13, 0.14);
   position: relative;
   z-index: 1;
 }
 
 .medalla__fallback {
-  aspect-ratio: 1.2 / 1;
+  height: 122px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -977,6 +1163,50 @@ button {
 @keyframes medallaCheck {
   from { opacity: 0; transform: scale(0); }
   to   { opacity: 1; transform: scale(1); }
+}
+
+/* Medalla todavía no ganada: en gris, esperando */
+.medalla--pendiente {
+  opacity: 1;
+  transform: none;
+}
+
+.medalla--pendiente .medalla__img,
+.medalla--pendiente .medalla__fallback {
+  filter: grayscale(1) contrast(0.85);
+  opacity: 0.45;
+  box-shadow: none;
+  animation: none;
+}
+
+.medalla__candado {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--gris);
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 2;
+}
+
+.medalla__pie {
+  margin-top: auto;
+  padding-top: 6px;
+  font-weight: 700;
+  font-size: 0.76rem;
+  line-height: 1.2;
+  color: var(--negro);
+}
+
+.medalla--pendiente .medalla__pie {
+  color: #888;
+  font-weight: 600;
 }
 
 .medallas__cierre {
@@ -1439,6 +1669,30 @@ button {
   border-color: var(--teal);
   color: var(--blanco);
 }
+
+.clase-item__reset {
+  background: transparent;
+  color: #5d3aa0;
+  border: 2px solid rgba(138, 90, 209, 0.45);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
+}
+
+.clase-item__reset:hover {
+  background: rgba(138, 90, 209, 0.10);
+  border-color: var(--violeta);
+  transform: translateY(-1px);
+}
+
+.clase-item__reset:active { transform: scale(0.97); }
 
 .clase-item__eliminar {
   background: transparent;

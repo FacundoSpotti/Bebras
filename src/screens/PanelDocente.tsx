@@ -197,6 +197,20 @@ export default function PanelDocente() {
     await cargarClases();
   }
 
+  async function resetearClase(clase: ClaseRow) {
+    const seguro = window.confirm(
+      `¿Reiniciar el progreso de "${clase.label}"?\n\nSe borran TODAS las figuritas pegadas de las 4 páginas y la clase vuelve a empezar de cero (solo queda abierta la página 1). La clase no se borra. Esta acción no se puede deshacer.`
+    );
+    if (!seguro) return;
+    const { error } = await supabase.from("progreso").delete().eq("clase_id", clase.id);
+    if (error) {
+      setFeedback({ tipo: "error", texto: "No pudimos reiniciar la clase. Probá de nuevo." });
+      return;
+    }
+    setProgreso((prev) => ({ ...prev, [clase.id]: new Set() }));
+    setFeedback({ tipo: "ok", texto: `Progreso de "${clase.label}" reiniciado ✓` });
+  }
+
   async function eliminarClase(clase: ClaseRow) {
     const seguro = window.confirm(
       `¿Eliminar la clase "${clase.label}"?\n\nSe borra también su progreso (las figuritas pegadas). Esta acción no se puede deshacer.`
@@ -395,6 +409,15 @@ export default function PanelDocente() {
                     onClick={() => copiar(c.id, `${c.id}:codigo`)}
                   >
                     {copiado === `${c.id}:codigo` ? "¡Copiado! ✓" : "Copiar código"}
+                  </button>
+                  <button
+                    type="button"
+                    className="clase-item__reset"
+                    onClick={() => resetearClase(c)}
+                    aria-label={`Reiniciar el progreso de la clase ${c.label}`}
+                    title="Borra las figuritas pegadas y vuelve a empezar"
+                  >
+                    Reiniciar progreso
                   </button>
                   <button
                     type="button"

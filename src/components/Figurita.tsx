@@ -6,6 +6,7 @@ import { cooldownRestante, formatoRestante } from "../lib/cooldown";
 export type ColorSeleccion = { bg: string; fg: string };
 
 const COLORES_SELECCION: Record<string, ColorSeleccion> = {
+  // --- Página 1 ---
   "Uruguay":        { bg: "#55b5e8", fg: "#0b2231" }, // La Celeste
   "Brasil":         { bg: "#009739", fg: "#ffffff" }, // verde de la bandera
   "Canada":         { bg: "#e4002b", fg: "#ffffff" }, // rojo maple
@@ -16,6 +17,39 @@ const COLORES_SELECCION: Record<string, ColorSeleccion> = {
   "Panama":         { bg: "#005293", fg: "#ffffff" }, // azul de la bandera
   "Mexico":         { bg: "#d5006d", fg: "#ffffff" }, // rosa mexicano
   "Argentina":      { bg: "#7c52d8", fg: "#ffffff" }, // violeta alternativo
+  // --- Página 2 ---
+  "ESPAÑA":         { bg: "#c60b1e", fg: "#ffffff" },
+  "FRANCIA":        { bg: "#12285f", fg: "#ffffff" },
+  "ITALIA":         { bg: "#1e6cb4", fg: "#ffffff" },
+  "ALEMANIA":       { bg: "#2b2b2b", fg: "#ffffff" },
+  "PORTUGAL":       { bg: "#046a38", fg: "#ffffff" },
+  "INGLATERRA":     { bg: "#e8ecef", fg: "#0b0b0d" },
+  "PAÍSES BAJOS":   { bg: "#ff6b1a", fg: "#ffffff" },
+  "BÉLGICA":        { bg: "#c8102e", fg: "#ffffff" },
+  "CROACIA":        { bg: "#d02b3c", fg: "#ffffff" },
+  "SUIZA":          { bg: "#e30513", fg: "#ffffff" },
+  // --- Página 3 ---
+  "CHEQUIA":        { bg: "#11457e", fg: "#ffffff" },
+  "ESCOCIA":        { bg: "#0d3b76", fg: "#ffffff" },
+  "NORUEGA":        { bg: "#ba0c2f", fg: "#ffffff" },
+  "SUECIA":         { bg: "#fecc02", fg: "#00295b" },
+  "TURKIYE":        { bg: "#e30a17", fg: "#ffffff" },
+  "JAPÓN":          { bg: "#0a1e46", fg: "#ffffff" },
+  "COREA DEL SUR":  { bg: "#c8102e", fg: "#ffffff" },
+  "ARABIA SAUDITA": { bg: "#006c35", fg: "#ffffff" },
+  "AUSTRALIA":      { bg: "#f5c518", fg: "#123122" },
+  "NUEVA ZELANDA":  { bg: "#1b1b1b", fg: "#ffffff" },
+  // --- Página 4 ---
+  "MARRUECOS":      { bg: "#b8112f", fg: "#ffffff" },
+  "EGIPTO":         { bg: "#c8102e", fg: "#ffffff" },
+  "SENEGAL":        { bg: "#00853f", fg: "#ffffff" },
+  "GHANA":          { bg: "#f8b300", fg: "#3b2405" },
+  "TÚNEZ":          { bg: "#e70013", fg: "#ffffff" },
+  "ARGELIA":        { bg: "#007a3d", fg: "#ffffff" },
+  "SUDÁFRICA":      { bg: "#007749", fg: "#ffffff" },
+  "CONGO":          { bg: "#d21034", fg: "#ffffff" },
+  "CABO VERDE":     { bg: "#003893", fg: "#ffffff" },
+  "CURAZAO":        { bg: "#002b7f", fg: "#ffffff" },
 };
 
 export function colorSeleccion(pais: string): ColorSeleccion {
@@ -61,10 +95,12 @@ export default function Figurita({ desafio, claseId, pegada, autor, animada, ind
   if (pegada) {
     const c = colorSeleccion(desafio.pais);
     return (
-      <div
+      <button
+        type="button"
         className={`figu figu--pegada${animada ? " figu--anim" : ""}`}
         style={delayEntrada}
-        aria-label={`Figurita ${num}: ${desafio.pais}, pegada${autor ? ` por ${autor}` : ""}.`}
+        onClick={() => onAbrir(desafio.n)}
+        aria-label={`Figurita ${num}: ${desafio.pais}, pegada${autor ? ` por ${autor}` : ""}. Tocá para ver el desafío.`}
       >
         {animada && (
           <span className="figu__festejo" aria-hidden="true">
@@ -76,23 +112,24 @@ export default function Figurita({ desafio, claseId, pegada, autor, animada, ind
         <span className="figu__check" aria-hidden="true">✓ Pegada</span>
         {imgRota ? (
           // Fallback si falta la imagen del país
-          <div className="figu__fallback" style={{ background: c.bg, color: c.fg }}>
+          <span className="figu__fallback" style={{ background: c.bg, color: c.fg }}>
             <span>{desafio.pais}</span>
-          </div>
+          </span>
         ) : (
-          <div className="figu__img-wrap">
+          <span className="figu__img-wrap">
             <img
               src={desafio.figuritaImg}
               alt={`Figurita de ${desafio.pais}`}
               onError={() => setImgRota(true)}
             />
-          </div>
+          </span>
         )}
-        <div className="figu__foot" style={{ background: c.bg, color: c.fg }}>
+        <span className="figu__ver" aria-hidden="true">Ver desafío</span>
+        <span className="figu__foot" style={{ background: c.bg, color: c.fg }}>
           {desafio.pais}
           {autor && <span className="figu__autor">la pegó {autor}</span>}
-        </div>
-      </div>
+        </span>
+      </button>
     );
   }
 

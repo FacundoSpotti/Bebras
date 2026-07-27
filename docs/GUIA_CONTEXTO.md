@@ -11,11 +11,13 @@
 
 **Álbum Bebras 2026** es un **álbum de figuritas digital** para el Desafío
 Bebras de Pensamiento Computacional (Ceibal / THEA — the electric academy).
-Una **clase entera** desbloquea en conjunto **10 figuritas** resolviendo 10
-desafíos Bebras de **opción múltiple**. El avance es **compartido por clase y
-en tiempo real**: cuando alguien acierta un desafío, la figurita se "pega"
-para toda la clase y aparece al instante en los demás dispositivos. No hay
-nota ni competencia; la meta es completar el álbum entre todos.
+Una **clase entera** desbloquea en conjunto **40 figuritas** repartidas en
+**4 páginas de 10**, resolviendo desafíos Bebras de **opción múltiple**. Cada
+página se habilita al completar la anterior y entrega una **medalla**. El
+avance es **compartido por clase y en tiempo real**: cuando alguien acierta un
+desafío, la figurita se "pega" para toda la clase y aparece al instante en los
+demás dispositivos. No hay nota ni competencia; la meta es completarlo entre
+todos.
 
 Es una web (Vite + React + Supabase, deploy en Vercel) con **router por hash**
 y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
@@ -30,7 +32,8 @@ y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
 - Ve la **lista de sus clases** con el progreso `X/10` en vivo.
 - Copia el **link** o el **código** de cada clase para repartir a sus estudiantes.
 - Ve, en vivo, qué **estudiantes están conectados** a cada álbum (tipo Kahoot).
-- Puede **eliminar** una clase.
+- Puede **reiniciar el progreso** de una clase (borra las figuritas de las 4
+  páginas y vuelve a bloquear las páginas 2, 3 y 4) o **eliminar** la clase.
 
 ### Estudiante / clase
 - Entra por el **link** (o pega el **código**) que le da el docente.
@@ -38,6 +41,10 @@ y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
 - Ve el **álbum de su clase** con las 10 figuritas y el progreso actual.
 - Abre una figurita bloqueada → resuelve el desafío de opción múltiple.
 - Si acierta, la figurita se **pega para toda la clase**; si falla, espera **5 minutos**.
+- Puede **navegar entre las 4 páginas** (adelante y atrás). Las páginas que
+  todavía no se habilitaron se ven en **blanco y negro**.
+- Puede **volver a ver** el enunciado de un desafío ya resuelto (con la
+  respuesta correcta marcada).
 - Ve el **scoreboard** de quién pegó cada figurita.
 - No inicia sesión ni tiene cuenta.
 
@@ -137,10 +144,26 @@ y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
 
 ## 5. Reglas de funcionamiento
 
+- **4 páginas de 10 figuritas (40 en total).** La página 1 está abierta desde
+  el arranque; cada página siguiente se **habilita al completar la anterior**.
+  Se puede navegar libremente hacia adelante y hacia atrás, pero una página
+  todavía no habilitada se ve en **blanco y negro** y no se puede jugar.
+
+- **Una medalla por página.** Al completar cada página, la clase gana una de
+  las 5 medallas del pensamiento computacional; las que faltan se muestran en
+  gris. La **quinta** medalla se gana al completar las 4 páginas.
+
 - **Álbum compartido por clase.** El progreso (qué figuritas están pegadas)
   vive en Supabase por `clase_id`. Todos los que abren el mismo link ven el
   **mismo** avance. Desbloquear una figurita la pega para **toda la clase**,
   no solo para quien respondió.
+
+- **Repaso de desafíos resueltos.** Tocar una figurita ya pegada vuelve a
+  abrir su enunciado, con la respuesta correcta marcada (no se puede volver a
+  responder).
+
+- **Reinicio del progreso.** El docente puede reiniciar una clase: se borran
+  todas las figuritas de las 4 páginas y la clase vuelve a empezar de cero.
 
 - **Tiempo real.** Al abrir el álbum se cargan las figuritas pegadas y se abre
   una suscripción en vivo. Cuando alguien acierta, aparece en los demás
@@ -226,13 +249,15 @@ Tacuarembó (1118), Treinta y Tres (1119).
 
 ---
 
-## 8. Contenido del álbum (10 figuritas)
+## 8. Contenido del álbum (40 figuritas en 4 páginas)
 
 > Sin respuestas correctas (la guía puede circular). El "país" es la figurita
 > coleccionable (set mundialista); el país de origen del desafío **no** se
 > muestra en la app.
 
-| # | Figurita (país) | Título del desafío | Dificultad |
+**Página 1 — América**
+
+| # | Figurita | Título del desafío | Dificultad |
 |---|---|---|---|
 | 01 | Uruguay | Regalo de cumpleaños | Fácil |
 | 02 | Brasil | Tréboles giratorios | Fácil |
@@ -245,9 +270,57 @@ Tacuarembó (1118), Treinta y Tres (1119).
 | 09 | México | ¿Qué pintó el pintor? | Difícil |
 | 10 | Argentina | Laberinto | Difícil |
 
-Los desafíos **01** y **06** tienen 6 opciones (**A–F**); **02, 05, 07, 08,
-09** tienen 4 opciones (**A–D**); **03, 04, 10** son **numéricos** (botones con
-números).
+**Página 2 — Europa I**
+
+| # | Figurita | Título del desafío | Dificultad |
+|---|---|---|---|
+| 11 | España | Vías del tren | Fácil |
+| 12 | Francia | Cola de castor | Fácil |
+| 13 | Italia | Pinturas Bebras | Fácil |
+| 14 | Alemania | Samba castor | Media |
+| 15 | Portugal | Observación del bosque | Media |
+| 16 | Inglaterra | Castores olvidadizos | Media |
+| 17 | Países Bajos | Rellenos de hamburguesa | Media |
+| 18 | Bélgica | Castorpesos | Difícil |
+| 19 | Croacia | Laberinto de colores | Difícil |
+| 20 | Suiza | Estacionamiento de robots | Difícil |
+
+**Página 3 — Europa II, Asia y Oceanía**
+
+| # | Figurita | Título del desafío | Dificultad |
+|---|---|---|---|
+| 21 | Chequia | Alienígenas amigables | Fácil |
+| 22 | Escocia | Riccas | Fácil |
+| 23 | Noruega | La caza de la frutilla | Fácil |
+| 24 | Suecia | Manzanas, bananas, brócoli y zanahorias | Media |
+| 25 | Turkiye | Centro de la ciudad | Media |
+| 26 | Japón | Rango | Media |
+| 27 | Corea del Sur | La cadena más larga | Media |
+| 28 | Arabia Saudita | Habitaciones y puertas | Difícil |
+| 29 | Australia | Alpinista | Difícil |
+| 30 | Nueva Zelanda | Rompecabezas de habitaciones | Difícil |
+
+**Página 4 — África y Caribe**
+
+| # | Figurita | Título del desafío | Dificultad |
+|---|---|---|---|
+| 31 | Marruecos | Huellas | Fácil |
+| 32 | Egipto | Agentes secretos | Fácil |
+| 33 | Senegal | Adornos navideños | Fácil |
+| 34 | Ghana | Búsqueda del tesoro | Media |
+| 35 | Túnez | Cuadrados para colorear | Media |
+| 36 | Argelia | Mesa de comedor | Media |
+| 37 | Sudáfrica | Llevando palos | Media |
+| 38 | Congo | Caperucita Roja | Difícil |
+| 39 | Cabo Verde | Viaje a casa de los abuelos | Difícil |
+| 40 | Curazao | La llave inglesa | Difícil |
+
+Las opciones varían por desafío: **letras** (A–D o A–F), **números** o
+**texto** (nombres, secuencias). El modal las arma solo según cada caso.
+
+**Medallas:** página 1 → Pensamiento algorítmico · página 2 → Abstracción ·
+página 3 → Generalización · página 4 → Descomposición · álbum completo →
+Evaluación.
 
 ---
 
