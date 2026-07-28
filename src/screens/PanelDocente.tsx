@@ -25,6 +25,10 @@ export default function PanelDocente() {
   // mientras el panel está abierto y se reinicia al cerrarlo (no se guarda).
   const [presencia, setPresencia] = useState<Record<string, Record<string, boolean>>>({});
 
+  // Clase cuyo cambio de modo se está confirmando (null = modal cerrado)
+  const [confirmarModo, setConfirmarModo] = useState<ClaseRow | null>(null);
+  const [aplicandoModo, setAplicandoModo] = useState(false);
+
   // Alta manual de clase
   const [manualRuee, setManualRuee] = useState("");
   const [manualGrado, setManualGrado] = useState("");
@@ -195,6 +199,46 @@ export default function PanelDocente() {
     setManualGrupo("");
     setManualMaestra("");
     await cargarClases();
+  }
+
+  /**
+   * Cambia el modo de la clase y borra su progreso en el mismo paso.
+   * Se borra primero: si algo falla, el modo no cambia y la clase queda
+   * como estaba (nunca a mitad de camino con el modo nuevo y datos viejos).
+   * El borrado es siempre `eq(clase_id)`: no toca ninguna otra clase.
+   */
+  async function aplicarCambioDeModo(clase: ClaseRow) {
+    const nuevoModo = !(clase.modo_individual === true);
+    setAplicandoModo(true);
+    const { error: errorBorrado } = await supabase
+      .from("progreso")
+      .delete()
+      .eq("clase_id", clase.id);
+    if (errorBorrado) {
+      setAplicandoModo(false);
+      setConfirmarModo(null);
+      setFeedback({ tipo: "error", texto: "No pudimos cambiar el modo. No se borró nada, probá de nuevo." });
+      return;
+    }
+    const { error: errorModo } = await supabase
+      .from("clases")
+      .update({ modo_individual: nuevoModo })
+      .eq("id", clase.id);
+    setAplicandoModo(false);
+    setConfirmarModo(null);
+    if (errorModo) {
+      setFeedback({ tipo: "error", texto: "Se borró el progreso pero no pudimos guardar el modo. Probá de nuevo." });
+      await cargarClases();
+      return;
+    }
+    setClases((prev) =>
+      prev.map((c) => (c.id === clase.id ? { ...c, modo_individual: nuevoModo } : c))
+    );
+    setProgreso((prev) => ({ ...prev, [clase.id]: new Set() }));
+    setFeedback({
+      tipo: "ok",
+      texto: `"${clase.label}" quedó en modo ${nuevoModo ? "individual" : "colectivo"} y empieza de cero ✓`,
+    });
   }
 
   async function resetearClase(clase: ClaseRow) {
@@ -387,6 +431,42 @@ export default function PanelDocente() {
                     <div className="clase-item__codigo">
                       Código: <code>{c.id}</code>
                     </div>
+                    <div className="modo">
+                      <span className="modo__label">Álbum:</span>
+                      <div
+                        className="modo__switch"
+                        role="radiogroup"
+                        aria-label={`Modo del álbum de ${c.label}`}
+                      >
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={c.modo_individual !== true}
+                          className={`modo__op${c.modo_individual !== true ? " modo__op--on" : ""}`}
+                          onClick={() => {
+                            if (c.modo_individual === true) setConfirmarModo(c);
+                          }}
+                        >
+                          Colectivo
+                        </button>
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={c.modo_individual === true}
+                          className={`modo__op${c.modo_individual === true ? " modo__op--on modo__op--ind" : ""}`}
+                          onClick={() => {
+                            if (c.modo_individual !== true) setConfirmarModo(c);
+                          }}
+                        >
+                          Individual
+                        </button>
+                      </div>
+                      <span className="modo__hint">
+                        {c.modo_individual === true
+                          ? "cada estudiante arma el suyo"
+                          : "una sola figurita para toda la clase"}
+                      </span>
+                    </div>
                   </div>
                   <div className="clase-item__prog">
                     <span className="clase-item__contador">
@@ -483,6 +563,63 @@ export default function PanelDocente() {
           })()}
         </section>
       </main>
+
+      {confirmarModo && (
+        <div
+          className="modal-overlay"
+          onClick={() => !aplicandoModo && setConfirmarModo(null)}
+        >
+          <div
+            className="modal modal--confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-modo-titulo"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal__body">
+              <h2 className="modal__titulo" id="confirm-modo-titulo">
+                {confirmarModo.modo_individual === true
+                  ? "¿Volver al álbum colectivo?"
+                  : "¿Pasar al álbum individual?"}
+              </h2>
+              <p className="confirm__clase">{confirmarModo.label}</p>
+              <p className="confirm__texto">
+                {confirmarModo.modo_individual === true
+                  ? "La clase vuelve a armar un solo álbum entre todos: cuando alguien acierta, la figurita se pega para todo el grupo."
+                  : "Cada estudiante va a armar su propio álbum en su computadora. Lo que resuelve uno no le pega la figurita a los demás, pero todos siguen viendo el scoreboard en vivo."}
+              </p>
+              <p className="confirm__aviso">
+                Ojo: esto borra el progreso actual de la clase. Todas las
+                figuritas pegadas hasta ahora, de todos los estudiantes,
+                vuelven a empezar de cero. No se puede deshacer.
+              </p>
+              <div className="confirm__acciones">
+                <button
+                  type="button"
+                  className="confirm__cancelar"
+                  onClick={() => setConfirmarModo(null)}
+                  disabled={aplicandoModo}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="confirm__ok"
+                  onClick={() => aplicarCambioDeModo(confirmarModo)}
+                  disabled={aplicandoModo}
+                  autoFocus
+                >
+                  {aplicandoModo
+                    ? "Aplicando…"
+                    : confirmarModo.modo_individual === true
+                      ? "Sí, volver a colectivo"
+                      : "Sí, pasar a individual"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

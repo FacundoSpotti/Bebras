@@ -32,6 +32,7 @@ y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
 - Ve la **lista de sus clases** con el progreso `X/10` en vivo.
 - Copia el **link** o el **código** de cada clase para repartir a sus estudiantes.
 - Ve, en vivo, qué **estudiantes están conectados** a cada álbum (tipo Kahoot).
+- Elige el **modo de cada clase**: **Colectivo** (por defecto) o **Individual**.
 - Puede **reiniciar el progreso** de una clase (borra las figuritas de las 4
   páginas y vuelve a bloquear las páginas 2, 3 y 4) o **eliminar** la clase.
 
@@ -153,10 +154,18 @@ y **tres pantallas** + un modal de desafío + una pantalla de felicitación.
   las 5 medallas del pensamiento computacional; las que faltan se muestran en
   gris. La **quinta** medalla se gana al completar las 4 páginas.
 
-- **Álbum compartido por clase.** El progreso (qué figuritas están pegadas)
-  vive en Supabase por `clase_id`. Todos los que abren el mismo link ven el
-  **mismo** avance. Desbloquear una figurita la pega para **toda la clase**,
-  no solo para quien respondió.
+- **Dos modos de álbum, elegibles por clase.**
+  - **Colectivo (por defecto):** el álbum es uno solo para todo el grupo.
+    Cuando alguien acierta, la figurita se pega para **toda la clase**.
+  - **Individual:** cada estudiante arma **su propio álbum** en su
+    computadora. Lo que resuelve uno **no** le pega la figurita a los demás;
+    varios pueden resolver el mismo desafío. Sirve para clases donde unos
+    pocos resuelven todo y dejan al resto sin nada que hacer.
+  - En **los dos modos** el **scoreboard** sigue en vivo: es lo que mantiene
+    conectada a la clase cuando el álbum es individual.
+  - Cambiar el modo **borra el progreso de esa clase** (avisa con un cartel
+    antes y no se puede deshacer). Solo afecta a esa clase.
+  - Las clases que ya estaban en uso siguen en **colectivo**, sin perder nada.
 
 - **Repaso de desafíos resueltos.** Tocar una figurita ya pegada vuelve a
   abrir su enunciado, con la respuesta correcta marcada (no se puede volver a

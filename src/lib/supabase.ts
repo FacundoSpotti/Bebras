@@ -23,11 +23,16 @@ export type ClaseRow = {
   grupo: string;
   maestra: string | null;
   label: string;
+  /** false (default) = álbum colectivo; true = cada estudiante arma el suyo. */
+  modo_individual?: boolean;
   created_at?: string;
 };
 
 export type ProgresoRow = {
   clase_id: string;
   figurita: number;
+  /** Estudiante que la pegó. Es parte de la PK: en modo individual cada uno
+   *  tiene su propia fila para la misma figurita. */
+  autor: string;
   unlocked_at?: string;
 };

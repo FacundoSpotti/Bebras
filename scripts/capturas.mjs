@@ -36,7 +36,9 @@ const H = {
 };
 
 // ---- Datos de prueba (ficticios, NO reales) ----
-const DOCENTE = "Celeste";
+// Se usa un docente SIN clases reales, para que la captura del "panel vacío"
+// salga limpia y para no mezclarse con datos de uso real.
+const DOCENTE = "Joaquín";
 const NOMBRE_ALUMNO = "Martina";
 
 const CLASES = [
@@ -100,6 +102,20 @@ async function shot(page, name, opts = {}) {
 async function main() {
   // Estado inicial limpio para los datos de captura
   for (const c of CLASES) await delClase(c.id);
+
+  // La captura 03 necesita el panel vacío: si el docente elegido tiene
+  // clases reales, avisamos en vez de fallar con un timeout críptico.
+  const r = await fetch(
+    `${URL}/rest/v1/clases?docente=eq.${encodeURIComponent(DOCENTE)}&select=id`,
+    { headers: H }
+  );
+  const suyas = await r.json();
+  if (Array.isArray(suyas) && suyas.length > 0) {
+    throw new Error(
+      `El docente "${DOCENTE}" ya tiene ${suyas.length} clases cargadas, así que ` +
+      `no se puede capturar el panel vacío. Elegí en este script un DOCENTE sin clases.`
+    );
+  }
 
   const browser = await chromium.launch();
   const context = await browser.newContext({

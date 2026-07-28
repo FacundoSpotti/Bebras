@@ -6,28 +6,61 @@
 
 -- ---------- TABLAS ----------
 create table if not exists clases (
-  id            text primary key,          -- claseId estable: "1103029-3456-aaaa"
-  docente       text not null,             -- DR logueado (dueño de la clase)
-  ruee          text not null,
-  departamento  text not null,
-  escuela       int  not null,
-  grado         text not null,
-  grupo         text not null,
-  maestra       text,                       -- columna "Docente" del Excel (DA), opcional
-  label         text not null,
-  created_at    timestamptz default now()
+  id              text primary key,          -- claseId estable: "1103029-3456-aaaa"
+  docente         text not null,             -- DR logueado (dueño de la clase)
+  ruee            text not null,
+  departamento    text not null,
+  escuela         int  not null,
+  grado           text not null,
+  grupo           text not null,
+  maestra         text,                       -- columna "Docente" del Excel (DA), opcional
+  label           text not null,
+  modo_individual boolean not null default false, -- false = álbum colectivo (default)
+  created_at      timestamptz default now()
 );
 
+-- Una fila por figurita desbloqueada. `autor` = nombre del estudiante que la
+-- pegó (el que guarda su navegador). Forma parte de la clave primaria para
+-- que en MODO INDIVIDUAL cada estudiante tenga su propia figurita sin pisar
+-- la de un compañero. En modo colectivo alcanza con que exista una fila.
 create table if not exists progreso (
   clase_id     text not null references clases(id) on delete cascade,
-  figurita     int  not null,               -- 1..10
-  autor        text,                        -- nombre del estudiante que la pegó (scoreboard)
+  figurita     int  not null,               -- 1..40
+  autor        text not null default '',    -- estudiante que la pegó (scoreboard)
   unlocked_at  timestamptz default now(),
-  primary key (clase_id, figurita)
+  primary key (clase_id, figurita, autor)
 );
 
--- Migración para bases creadas antes del scoreboard (no rompe si ya existe):
+-- ---------- MIGRACIONES (para bases que ya existían) ----------
+-- Se pueden correr varias veces y NO borran progreso.
+
+-- 1) Scoreboard: quién pegó cada figurita.
 alter table progreso add column if not exists autor text;
+
+-- 2) Modo individual por clase. Las clases que ya están en uso quedan en
+--    modo colectivo (false), así no cambia nada de lo que ya funciona.
+alter table clases add column if not exists modo_individual boolean not null default false;
+
+-- 3) Clave primaria por estudiante: habilita que dos estudiantes de la misma
+--    clase tengan la misma figurita cuando el modo es individual.
+update progreso set autor = '' where autor is null;
+alter table progreso alter column autor set default '';
+alter table progreso alter column autor set not null;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.table_constraints tc
+    join information_schema.key_column_usage kcu
+      on tc.constraint_name = kcu.constraint_name
+    where tc.table_name = 'progreso' and tc.constraint_type = 'PRIMARY KEY'
+    group by tc.constraint_name
+    having count(*) = 2      -- PK vieja: (clase_id, figurita)
+  ) then
+    alter table progreso drop constraint progreso_pkey;
+    alter table progreso add constraint progreso_pkey primary key (clase_id, figurita, autor);
+  end if;
+end $$;
 
 -- ---------- REALTIME ----------
 -- Publica cambios de 'progreso' para las suscripciones en vivo del álbum y del panel docente.
@@ -56,12 +89,12 @@ values (
 )
 on conflict (id) do nothing;
 
-insert into progreso (clase_id, figurita) values
-  ('1103029-3456-aaaa', 1),
-  ('1103029-3456-aaaa', 2),
-  ('1103029-3456-aaaa', 3),
-  ('1103029-3456-aaaa', 4)
-on conflict (clase_id, figurita) do nothing;
+insert into progreso (clase_id, figurita, autor) values
+  ('1103029-3456-aaaa', 1, 'Martina'),
+  ('1103029-3456-aaaa', 2, 'Bruno'),
+  ('1103029-3456-aaaa', 3, 'Sofía'),
+  ('1103029-3456-aaaa', 4, 'Thiago')
+on conflict (clase_id, figurita, autor) do nothing;
 
 -- Link para probar el álbum de esa clase:
 --   https://<tu-proyecto>.vercel.app/#/clase/1103029-3456-aaaa

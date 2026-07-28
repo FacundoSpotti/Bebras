@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { supabase, supabaseConfigurado, type ClaseRow, type ProgresoRow } from "../lib/supabase";
 import {
   TOTAL_FIGURITAS,
@@ -23,14 +23,19 @@ type Estado = "cargando" | "ok" | "no-encontrada" | "error";
 
 type Toast = { id: number; texto: string };
 
+/** Una figurita desbloqueada por alguien de la clase. */
+type Fila = { figurita: number; autor: string };
+
 // Franjas decorativas de la banda del título (como en el prototipo)
 const DECO = ["#ffbc00", "#fb4747", "#fb5d7f", "#8a5ad1"];
 
 export default function Album({ claseId }: Props) {
   const [estado, setEstado] = useState<Estado>("cargando");
   const [clase, setClase] = useState<ClaseRow | null>(null);
-  // figurita → autor (null si no sabemos quién la pegó)
-  const [pegadas, setPegadas] = useState<Map<number, string | null>>(new Map());
+  // Todas las filas de progreso de la clase: una por (figurita, autor).
+  // En modo colectivo alcanza con que exista una fila para que la figurita
+  // esté pegada; en modo individual cada estudiante mira solo las suyas.
+  const [filas, setFilas] = useState<Fila[]>([]);
   const [animadas, setAnimadas] = useState<Set<number>>(new Set());
   const [modalN, setModalN] = useState<number | null>(null);
   // Página que se está mirando (1..4). Se ajusta sola al cargar el progreso.
@@ -46,12 +51,34 @@ export default function Album({ claseId }: Props) {
   const nombreRef = useRef(nombre);
   nombreRef.current = nombre;
 
-  const agregarFigurita = useCallback((n: number, autor: string | null, animar: boolean) => {
-    setPegadas((prev) => {
-      if (prev.has(n)) return prev;
-      const next = new Map(prev);
-      next.set(n, autor);
-      return next;
+  // Modo de la clase: colectivo (default) o individual.
+  const individual = clase?.modo_individual === true;
+  const individualRef = useRef(individual);
+  individualRef.current = individual;
+
+  // Figuritas que van en MI grilla: en colectivo, todo lo de la clase;
+  // en individual, solo lo que resolvió este estudiante.
+  const misPegadas = useMemo(() => {
+    const s = new Set<number>();
+    for (const f of filas) {
+      if (!individual || f.autor === nombre) s.add(f.figurita);
+    }
+    return s;
+  }, [filas, individual, nombre]);
+
+  // Quién pegó cada figurita (para el pie de la figurita en modo colectivo).
+  const autorPorFigurita = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const f of filas) {
+      if (f.autor && !m.has(f.figurita)) m.set(f.figurita, f.autor);
+    }
+    return m;
+  }, [filas]);
+
+  const agregarFila = useCallback((n: number, autor: string, animar: boolean) => {
+    setFilas((prev) => {
+      if (prev.some((f) => f.figurita === n && f.autor === autor)) return prev;
+      return [...prev, { figurita: n, autor }];
     });
     if (animar) {
       setAnimadas((prev) => new Set(prev).add(n));
@@ -100,15 +127,17 @@ export default function Album({ claseId }: Props) {
         setEstado("error");
         return;
       }
-      const mapa = new Map(
-        ((progData ?? []) as { figurita: number; autor: string | null }[]).map((p) => [
-          p.figurita,
-          p.autor,
-        ])
+      const nuevas: Fila[] = ((progData ?? []) as { figurita: number; autor: string | null }[])
+        .map((p) => ({ figurita: p.figurita, autor: p.autor ?? "" }));
+      setFilas(nuevas);
+      // El grid depende del modo: colectivo = todo lo de la clase;
+      // individual = solo lo que resolvió este estudiante.
+      const individualClase = (claseData as ClaseRow).modo_individual === true;
+      const mio = getNombreEstudiante();
+      const set = new Set(
+        nuevas.filter((f) => !individualClase || f.autor === mio).map((f) => f.figurita)
       );
-      setPegadas(mapa);
       // Las páginas que ya venían completas no disparan festejo al entrar.
-      const set = new Set(mapa.keys());
       const completasAlEntrar = new Set<number>();
       for (let p = 1; p <= TOTAL_PAGINAS; p++) {
         if (paginaCompleta(p, set)) completasAlEntrar.add(p);
@@ -124,7 +153,9 @@ export default function Album({ claseId }: Props) {
     };
   }, [claseId]);
 
-  // Realtime: nuevos desbloqueos de esta clase (hechos por cualquiera)
+  // Realtime: nuevos desbloqueos de esta clase (hechos por cualquiera).
+  // La misma suscripción alimenta el scoreboard en los dos modos; lo que
+  // cambia es si la figurita además se pega en MI grilla.
   useEffect(() => {
     if (!supabaseConfigurado) return;
     const channel = supabase
@@ -134,12 +165,20 @@ export default function Album({ claseId }: Props) {
         { event: "INSERT", schema: "public", table: "progreso", filter: `clase_id=eq.${claseId}` },
         (payload) => {
           const fila = payload.new as ProgresoRow & { autor?: string | null };
-          const autor = fila.autor ?? null;
-          agregarFigurita(fila.figurita, autor, true);
+          const autor = fila.autor ?? "";
+          const esMia = autor === nombreRef.current;
+          // En individual, lo de un compañero suma al scoreboard pero no
+          // pega ni anima nada en mi álbum.
+          const enMiGrilla = !individualRef.current || esMia;
+          agregarFila(fila.figurita, autor, enMiGrilla);
           // Aviso solo si lo pegó otra persona (mi propio acierto ya se ve)
-          if (autor && autor !== nombreRef.current) {
+          if (autor && !esMia) {
             const d = desafioPorN(fila.figurita);
-            avisar(`${autor} pegó la figurita ${String(fila.figurita).padStart(2, "0")}${d ? ` · ${d.pais}` : ""}`);
+            avisar(
+              individualRef.current
+                ? `${autor} va por la figurita ${String(fila.figurita).padStart(2, "0")}`
+                : `${autor} pegó la figurita ${String(fila.figurita).padStart(2, "0")}${d ? ` · ${d.pais}` : ""}`
+            );
           }
         }
       )
@@ -147,7 +186,7 @@ export default function Album({ claseId }: Props) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [claseId, agregarFigurita, avisar]);
+  }, [claseId, agregarFila, avisar]);
 
   // Presencia: el estudiante se anuncia en el canal de su clase para que
   // el docente pueda ver en vivo quién está conectado (estilo Kahoot).
@@ -167,20 +206,23 @@ export default function Album({ claseId }: Props) {
     };
   }, [claseId, estado, nombre]);
 
-  // Respuesta correcta → upsert compartido (idempotente), con autor
+  // Respuesta correcta → guarda la figurita con el nombre de quien la resolvió.
+  // Idempotente por (clase, figurita, autor): en colectivo la clase la ve
+  // pegada; en individual entra solo en el álbum de ese estudiante.
   const desbloquear = useCallback(
     async (n: number): Promise<boolean> => {
+      const autor = nombreRef.current ?? "";
       const { error } = await supabase
         .from("progreso")
         .upsert(
-          { clase_id: claseId, figurita: n, autor: nombreRef.current },
-          { onConflict: "clase_id,figurita" }
+          { clase_id: claseId, figurita: n, autor },
+          { onConflict: "clase_id,figurita,autor" }
         );
       if (error) return false;
-      agregarFigurita(n, nombreRef.current, true);
+      agregarFila(n, autor, true);
       return true;
     },
-    [claseId, agregarFigurita]
+    [claseId, agregarFila]
   );
 
   // Festejo: cuando una página se completa DURANTE la sesión, entrega su
@@ -188,15 +230,14 @@ export default function Album({ claseId }: Props) {
   // (para eso está el botón "Ver nuestras medallas").
   useEffect(() => {
     if (estado !== "ok" || !yaFestejadas.current) return;
-    const set = new Set(pegadas.keys());
     for (let p = 1; p <= TOTAL_PAGINAS; p++) {
-      if (paginaCompleta(p, set) && !yaFestejadas.current.has(p)) {
+      if (paginaCompleta(p, misPegadas) && !yaFestejadas.current.has(p)) {
         yaFestejadas.current.add(p);
         setFestejo(p);
         break;
       }
     }
-  }, [pegadas, estado]);
+  }, [misPegadas, estado]);
 
   function guardarNombre(e: FormEvent) {
     e.preventDefault();
@@ -289,26 +330,27 @@ export default function Album({ claseId }: Props) {
   }
 
   const desafioModal = modalN != null ? desafioPorN(modalN) : undefined;
-  const setPegadas_ = new Set(pegadas.keys());
-  const completo = pegadas.size >= TOTAL_FIGURITAS;
+  const completo = misPegadas.size >= TOTAL_FIGURITAS;
 
   // Estado de la página que se está mirando
-  const abierta = paginaDesbloqueada(pagina, setPegadas_);
+  const abierta = paginaDesbloqueada(pagina, misPegadas);
   const desafiosPag = desafiosDePagina(pagina);
-  const pegadasPag = pegadasDePagina(pagina, setPegadas_);
-  // Cuántas páginas completas tiene la clase (define las medallas ganadas)
+  const pegadasPag = pegadasDePagina(pagina, misPegadas);
+  // Cuántas páginas completas (define las medallas ganadas)
   let paginasCompletas = 0;
   for (let p = 1; p <= TOTAL_PAGINAS; p++) {
-    if (paginaCompleta(p, setPegadas_)) paginasCompletas++;
+    if (paginaCompleta(p, misPegadas)) paginasCompletas++;
   }
 
-  // Scoreboard: cuántas figuritas pegó cada estudiante (y cuáles)
+  // Scoreboard: cuántas figuritas pegó cada estudiante (y cuáles).
+  // Siempre sale de TODAS las filas de la clase, en los dos modos: es lo que
+  // mantiene conectada a la clase cuando el álbum es individual.
   const score = new Map<string, number[]>();
-  for (const [fig, autor] of pegadas) {
-    if (!autor) continue;
-    const lista = score.get(autor) ?? [];
-    lista.push(fig);
-    score.set(autor, lista);
+  for (const f of filas) {
+    if (!f.autor) continue;
+    const lista = score.get(f.autor) ?? [];
+    if (!lista.includes(f.figurita)) lista.push(f.figurita);
+    score.set(f.autor, lista);
   }
   const ranking = [...score.entries()]
     .map(([autor, figus]) => ({ autor, figus: figus.sort((a, b) => a - b) }))
@@ -320,7 +362,10 @@ export default function Album({ claseId }: Props) {
         <img className="nav__logo" src="/assets/logotipo.svg" alt="THEA — the electric academy" />
         <span className="nav__clase">
           {clase.label}
-          <span className="nav__usuario">{nombre}</span>
+          <span className="nav__usuario">
+            {nombre}
+            {individual && <span className="nav__modo">tu álbum</span>}
+          </span>
         </span>
       </header>
 
@@ -354,8 +399,8 @@ export default function Album({ claseId }: Props) {
         </button>
         <div className="paginas__lista">
           {Array.from({ length: TOTAL_PAGINAS }, (_, i) => i + 1).map((p) => {
-            const libre = paginaDesbloqueada(p, setPegadas_);
-            const lista = paginaCompleta(p, setPegadas_);
+            const libre = paginaDesbloqueada(p, misPegadas);
+            const lista = paginaCompleta(p, misPegadas);
             return (
               <button
                 key={p}
@@ -371,12 +416,12 @@ export default function Album({ claseId }: Props) {
                 aria-label={
                   `Página ${p}` +
                   (lista ? ", completa" : !libre ? ", bloqueada" : "") +
-                  `: ${pegadasDePagina(p, setPegadas_)} de ${FIGURITAS_POR_PAGINA} figuritas`
+                  `: ${pegadasDePagina(p, misPegadas)} de ${FIGURITAS_POR_PAGINA} figuritas`
                 }
               >
                 <span className="paginas__num">{p}</span>
                 <span className="paginas__estado">
-                  {lista ? "✓" : !libre ? "🔒" : `${pegadasDePagina(p, setPegadas_)}/${FIGURITAS_POR_PAGINA}`}
+                  {lista ? "✓" : !libre ? "🔒" : `${pegadasDePagina(p, misPegadas)}/${FIGURITAS_POR_PAGINA}`}
                 </span>
               </button>
             );
@@ -392,14 +437,14 @@ export default function Album({ claseId }: Props) {
           ›
         </button>
         <span className="paginas__total">
-          Álbum completo: {pegadas.size}/{TOTAL_FIGURITAS}
+          Álbum completo: {misPegadas.size}/{TOTAL_FIGURITAS}
         </span>
       </section>
 
       <section className="progreso">
         <p className="progreso__label">Progreso · Página {pagina}</p>
         <BarraProgreso
-          desbloqueadas={new Set(desafiosPag.filter((d) => pegadas.has(d.n)).map((d) => d.n))}
+          desbloqueadas={new Set(desafiosPag.filter((d) => misPegadas.has(d.n)).map((d) => d.n))}
           items={desafiosPag.map((d) => d.n)}
         />
         {paginasCompletas > 0 && (
@@ -420,8 +465,8 @@ export default function Album({ claseId }: Props) {
               key={d.n}
               desafio={d}
               claseId={claseId}
-              pegada={pegadas.has(d.n)}
-              autor={pegadas.get(d.n) ?? null}
+              pegada={misPegadas.has(d.n)}
+              autor={individual ? null : autorPorFigurita.get(d.n) ?? null}
               animada={animadas.has(d.n)}
               indice={i}
               onAbrir={setModalN}
@@ -464,7 +509,11 @@ export default function Album({ claseId }: Props) {
       {ranking.length > 0 && (
         <section className="score">
           <h2 className="score__titulo">Scoreboard de la clase</h2>
-          <p className="score__hint">Quién pegó cada figurita. Lo importante es completarlo entre todos.</p>
+          <p className="score__hint">
+            {individual
+              ? "Cómo va cada quien con su álbum. Lo importante es participar, no ganar."
+              : "Quién pegó cada figurita. Lo importante es completarlo entre todos."}
+          </p>
           <ol className="score__lista">
             {ranking.map((r, i) => (
               <li className="score__fila" key={r.autor}>
@@ -491,7 +540,7 @@ export default function Album({ claseId }: Props) {
         <ModalDesafio
           desafio={desafioModal}
           claseId={claseId}
-          pegada={pegadas.has(desafioModal.n)}
+          pegada={misPegadas.has(desafioModal.n)}
           onCorrecta={desbloquear}
           onClose={() => setModalN(null)}
         />
